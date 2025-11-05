@@ -1,11 +1,14 @@
 package com.example.niftylive.data.repository
 
+import android.util.Log
 import com.example.niftylive.data.api.SmartApiService
 import com.example.niftylive.data.model.InstrumentQuote
 import com.example.niftylive.data.model.LoginResponse
 import com.example.niftylive.data.model.QuoteResponse
 import com.example.niftylive.utils.SecurePrefs
+import okhttp3.ResponseBody
 import retrofit2.Response
+import com.squareup.moshi.Moshi
 
 class NiftyRepository(
     private val api: SmartApiService,
@@ -21,8 +24,7 @@ class NiftyRepository(
 
     /**
      * Logs in to SmartAPI using client credentials and TOTP (authCode).
-     * SmartAPI requires JSON body with `clientcode`, `password`, `totp`.
-     * The API key must be sent as X-PrivateKey header.
+     * Automatically handles plain-text or invalid JSON responses.
      */
     suspend fun loginWithCredentials(
         clientCode: String,
@@ -36,22 +38,41 @@ class NiftyRepository(
             "totp" to authCode
         )
 
-        val response = api.login(apiKey, body)
+        val rawResponse = api.login(apiKey, body)
 
-        // ✅ Handle invalid/malformed SmartAPI responses safely
-        if (response.isSuccessful && response.body() == null) {
-            val raw = response.errorBody()?.string() ?: "Unexpected empty response"
-            throw Exception("Invalid JSON or text response from server: $raw")
+        // ✅ If response is JSON, just return as-is
+        if (rawResponse.isSuccessful && rawResponse.body() != null) {
+            return rawResponse
         }
 
-        return response
+        // ✅ If SmartAPI sent text instead of JSON, handle manually
+        val rawText = rawResponse.errorBody()?.string()
+            ?: rawResponse.body()?.toString()
+            ?: "Empty or malformed response from SmartAPI"
+
+        Log.e("SmartAPI_RAW", rawText)
+
+        // Try parsing manually with lenient Moshi (to avoid crash)
+        return try {
+            val moshi = Moshi.Builder().build()
+            val adapter = moshi.adapter(LoginResponse::class.java).lenient()
+            val parsed = adapter.fromJson(rawText)
+            if (parsed != null) {
+                Response.success(parsed)
+            } else {
+                Response.error(500, ResponseBody.create(null, rawText))
+            }
+        } catch (e: Exception) {
+            Log.e("SmartAPI_PARSE", "Invalid JSON: ${e.localizedMessage}")
+            Response.error(500, ResponseBody.create(null, "Invalid response: $rawText"))
+        }
     }
 
-    /** ✅ Save tokens from SmartAPI login response */
+    /** Save tokens from SmartAPI login response */
     fun saveTokens(loginData: LoginResponse?) {
-        loginData?.data?.jwtToken?.let { prefs.saveString(KEY_ACCESS, it) }
-        loginData?.data?.refreshToken?.let { prefs.saveString(KEY_REFRESH, it) }
-        loginData?.data?.feedToken?.let { prefs.saveString(KEY_FEED, it) }
+        loginData?.data?.access_token?.let { prefs.saveString(KEY_ACCESS, it) }
+        loginData?.data?.refresh_token?.let { prefs.saveString(KEY_REFRESH, it) }
+        loginData?.data?.feed_token?.let { prefs.saveString(KEY_FEED, it) }
     }
 
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
@@ -65,7 +86,7 @@ class NiftyRepository(
     fun getClientCode(): String? = prefs.getString(KEY_CLIENT)
     fun getApiKey(): String? = prefs.getString(KEY_APIKEY)
 
-    /** ✅ Fetch live quote for an instrument token */
+    /** Fetch live quote for an instrument token */
     suspend fun getQuoteForToken(token: String): InstrumentQuote? {
         val access = getAccessToken() ?: return null
         val apiKey = getApiKey() ?: return null
