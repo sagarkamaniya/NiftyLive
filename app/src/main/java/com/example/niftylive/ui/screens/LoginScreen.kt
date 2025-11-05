@@ -5,106 +5,102 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.niftylive.viewmodel.AuthState
 import com.example.niftylive.viewmodel.AuthViewModel
 
 @Composable
-fun LoginScreen(viewModel: AuthViewModel = viewModel()) {
+fun LoginScreen(
+    navController: NavController,
+    viewModel: AuthViewModel
+) {
+    val authState by viewModel.authState.collectAsState()
     var clientCode by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var apiKey by remember { mutableStateOf("") }
-    var authCode by remember { mutableStateOf("") }
+    var otp by remember { mutableStateOf("") }
 
-    val state by viewModel.state.collectAsState()
-
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        contentAlignment = Alignment.Center
     ) {
-        Text("SmartAPI Login", fontSize = 24.sp)
-
-        Spacer(Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = clientCode,
-            onValueChange = { clientCode = it },
-            label = { Text("Client Code") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = apiKey,
-            onValueChange = { apiKey = it },
-            label = { Text("API Key") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = authCode,
-            onValueChange = { authCode = it },
-            label = { Text("Auth Code / OTP") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                viewModel.login(clientCode, password, apiKey, authCode)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Login")
-        }
+            Text("SmartAPI Login", fontSize = 24.sp)
 
-        Spacer(Modifier.height(12.dp))
-
-        when (val s = state) {
-            is AuthState.Loading -> Text("Logging in...", color = Color.Gray)
-            is AuthState.Success -> Text(
-                text = "Login Successful! Token: ${s.token.take(10)}...",
-                color = Color.Green
+            OutlinedTextField(
+                value = clientCode,
+                onValueChange = { clientCode = it },
+                label = { Text("Client Code") },
+                modifier = Modifier.fillMaxWidth()
             )
-            is AuthState.Error -> {
-                Text(
-                    text = "Error: ${s.message}",
-                    color = Color.Red,
-                    fontSize = 16.sp
-                )
-                if (!s.rawResponse.isNullOrBlank()) {
-                    Spacer(Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = apiKey,
+                onValueChange = { apiKey = it },
+                label = { Text("API Key") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = otp,
+                onValueChange = { otp = it },
+                label = { Text("Auth Code / OTP") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Button(
+                onClick = {
+                    viewModel.login(clientCode, password, apiKey, otp)
+                },
+                enabled = authState !is AuthState.Loading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) {
+                Text(if (authState is AuthState.Loading) "Logging in..." else "Login")
+            }
+
+            when (val state = authState) {
+                is AuthState.Success -> {
                     Text(
-                        text = "Raw:\n${s.rawResponse}",
-                        color = Color.DarkGray,
-                        fontSize = 12.sp
+                        text = "Login Successful! Token: ${state.token.take(10)}...",
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    // 🔥 Navigate automatically after delay
+                    LaunchedEffect(Unit) {
+                        kotlinx.coroutines.delay(1000)
+                        navController.navigate("dashboard") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
+                }
+
+                is AuthState.Error -> {
+                    Text(
+                        text = "Error: ${state.message}",
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
+
+                else -> {}
             }
-            else -> {}
         }
     }
 }
