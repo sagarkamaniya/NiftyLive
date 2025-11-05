@@ -25,18 +25,41 @@ class NiftyRepository(
      * The API key must be sent as X-PrivateKey header.
      */
     suspend fun loginWithCredentials(
-        clientCode: String,
-        password: String,
-        apiKey: String,
-        authCode: String
-    ): Response<LoginResponse> {
-        val body = mapOf(
-            "clientcode" to clientCode,
-            "password" to password,
-            "totp" to authCode
+    clientCode: String,
+    password: String,
+    apiKey: String,
+    authCode: String
+): Response<LoginResponse> {
+    val body = mapOf(
+        "clientcode" to clientCode,
+        "password" to password,
+        "totp" to authCode
+    )
+
+    // Call SmartAPI login
+    val rawResponse = api.login(apiKey, body)
+
+    if (rawResponse.isSuccessful) {
+        val bodyString = rawResponse.body() ?: return Response.error(
+            400,
+            okhttp3.ResponseBody.create(null, "Empty")
         )
-        return api.login(apiKey, body) // ✅ must include apiKey header
+
+        return try {
+            val moshi = com.squareup.moshi.Moshi.Builder().build()
+            val adapter = moshi.adapter(LoginResponse::class.java)
+            val parsed = adapter.fromJson(bodyString)
+            Response.success(parsed)
+        } catch (e: Exception) {
+            Response.error(
+                500,
+                okhttp3.ResponseBody.create(null, "Invalid JSON: ${e.localizedMessage}")
+            )
+        }
+    } else {
+        return Response.error(rawResponse.code(), rawResponse.errorBody()!!)
     }
+}
 
     /** Save tokens from SmartAPI login response */
 fun saveTokens(loginData: LoginResponse?) {

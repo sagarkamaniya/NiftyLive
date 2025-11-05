@@ -24,7 +24,7 @@ interface SmartApiService {
     suspend fun login(
         @Header("X-PrivateKey") apiKey: String,
         @Body body: Map<String, @JvmSuppressWildcards Any>
-    ): Response<LoginResponse>
+    ): Response<String>
 
 
     // ✅ QUOTE: Fetch market quote data

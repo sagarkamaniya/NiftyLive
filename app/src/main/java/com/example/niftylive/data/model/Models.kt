@@ -4,16 +4,16 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class LoginResponse(
-    val status: String? = null,
+    val status: Boolean? = null,
+    val message: String? = null,
     val data: LoginData? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class LoginData(
-    val access_token: String? = null,
-    val refresh_token: String? = null,
-    val feed_token: String? = null,
-    val expires_in: Long? = null
+    val jwtToken: String? = null,
+    val refreshToken: String? = null,
+    val feedToken: String? = null
 )
 
 @JsonClass(generateAdapter = true)
