@@ -19,44 +19,57 @@ class NiftyRepository(
         const val KEY_APIKEY = "api_key"
     }
 
-    suspend fun loginWithCredentials(clientCode: String, password: String, apiKey: String, authCode: String): Response<LoginResponse> {
-        // TODO: adapt body according to SmartAPI login endpoint you use
+    /**
+     * Logs in to SmartAPI using client credentials and TOTP (authCode).
+     * SmartAPI requires JSON body with `clientcode`, `password`, `totp`.
+     * The API key must be sent as X-PrivateKey header.
+     */
+    suspend fun loginWithCredentials(
+        clientCode: String,
+        password: String,
+        apiKey: String,
+        authCode: String
+    ): Response<LoginResponse> {
         val body = mapOf(
-            "client_code" to clientCode,
+            "clientcode" to clientCode,
             "password" to password,
-            "api_key" to apiKey,
-            "auth_code" to authCode
+            "totp" to authCode
         )
-        return api.login(body)
+        return api.login(apiKey, body) // ✅ must include apiKey header
     }
 
+    /** Save tokens from SmartAPI login response */
     fun saveTokens(loginData: LoginResponse?) {
-        loginData?.data?.access_token?.let { prefs.saveString(KEY_ACCESS, it) }
-        loginData?.data?.refresh_token?.let { prefs.saveString(KEY_REFRESH, it) }
-        loginData?.data?.feed_token?.let { prefs.saveString(KEY_FEED, it) }
+        loginData?.data?.jwtToken?.let { prefs.saveString(KEY_ACCESS, it) }
+        loginData?.data?.refreshToken?.let { prefs.saveString(KEY_REFRESH, it) }
+        loginData?.data?.feedToken?.let { prefs.saveString(KEY_FEED, it) }
     }
 
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
     fun getFeedToken(): String? = prefs.getString(KEY_FEED)
+
     fun saveCredentials(clientCode: String, apiKey: String) {
         prefs.saveString(KEY_CLIENT, clientCode)
         prefs.saveString(KEY_APIKEY, apiKey)
     }
+
     fun getClientCode(): String? = prefs.getString(KEY_CLIENT)
     fun getApiKey(): String? = prefs.getString(KEY_APIKEY)
 
+    /** Fetch live quote for an instrument token */
     suspend fun getQuoteForToken(token: String): InstrumentQuote? {
         val access = getAccessToken() ?: return null
+        val apiKey = getApiKey() ?: return null
         val bearer = "Bearer $access"
-        // body structure assumed by SmartAPI - adjust if needed
-        val body: Map<String, Any> = mapOf(
+
+        val body = mapOf(
             "mode" to "FULL",
             "exchangeTokens" to mapOf("NSE" to listOf(token))
         )
-        val resp: Response<QuoteResponse> = api.getQuote(bearer, body)
+
+        val resp: Response<QuoteResponse> = api.getQuote(bearer, apiKey, body)
         if (resp.isSuccessful) {
-            val q = resp.body()?.data?.values?.firstOrNull()
-            return q
+            return resp.body()?.data?.values?.firstOrNull()
         }
         return null
     }

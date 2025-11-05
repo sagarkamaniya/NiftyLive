@@ -1,18 +1,34 @@
-package com.example.niftylive.data.api
+package com.example.niftylive.data
 
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import retrofit2.converter.scalars.ScalarsConverterFactory
 
-class RetrofitProvider {
-    private val client = OkHttpClient.Builder().build()
+object RetrofitProvider {
+    private val logger = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
 
-    // TODO: Replace baseUrl with official SmartAPI REST base if different.
-    private val retrofit = Retrofit.Builder()
-        .baseUrl("https://apiconnect.angelbroking.com/") // placeholder base
-        .client(client)
-        .addConverterFactory(MoshiConverterFactory.create())
+    private val client = OkHttpClient.Builder()
+        .addInterceptor(logger)
         .build()
 
-    val service: SmartApiService = retrofit.create(SmartApiService::class.java)
+    private val moshi = Moshi.Builder()
+        .add(KotlinJsonAdapterFactory())
+        .build()
+
+    val retrofit: Retrofit = Retrofit.Builder()
+        .baseUrl("https://apiconnect.angelone.in/") // <- replace with the real SmartAPI base if different
+        .client(client)
+        // Scalars FIRST so plain text/HTML responses are handled as String
+        .addConverterFactory(ScalarsConverterFactory.create())
+        // then Moshi for real JSON
+        .addConverterFactory(MoshiConverterFactory.create(moshi))
+        .build()
+
+    val moshiInstance: Moshi = moshi
 }
