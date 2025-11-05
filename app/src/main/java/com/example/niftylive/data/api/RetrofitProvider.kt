@@ -1,7 +1,5 @@
 package com.example.niftylive.data.api
 
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -13,19 +11,16 @@ class RetrofitProvider {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    private val moshi = Moshi.Builder()
-        .add(KotlinJsonAdapterFactory())
-        .build()
-
     private val client = OkHttpClient.Builder()
         .addInterceptor(logging)
         .build()
 
     private val retrofit = Retrofit.Builder()
-        .baseUrl("https://apiconnect.angelone.in/") // ✅ SmartAPI base URL
+        .baseUrl("https://apiconnect.angelone.in/") // ✅ Correct SmartAPI Base URL
         .client(client)
+        // ✅ Order matters: Scalars first, then JSON
         .addConverterFactory(ScalarsConverterFactory.create())
-        .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient()) // ✅ tolerant JSON
+        .addConverterFactory(MoshiConverterFactory.create())
         .build()
 
     val service: SmartApiService = retrofit.create(SmartApiService::class.java)
