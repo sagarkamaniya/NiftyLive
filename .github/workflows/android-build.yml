@@ -9,8 +9,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # ✅ Increase memory and control Gradle behavior
     env:
+      # 🧠 Boost JVM heap for Gradle + D8
       JAVA_TOOL_OPTIONS: "-Xmx6g -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
       GRADLE_OPTS: "-Xmx6g -Dfile.encoding=UTF-8"
       ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
@@ -39,10 +39,10 @@ jobs:
         run: chmod +x gradlew
 
       - name: Clean project
-        run: ./gradlew clean --no-daemon --max-workers=2
+        run: ./gradlew clean --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx6g -Dfile.encoding=UTF-8"
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --max-workers=2
+      - name: Build Debug APK (no R8, low-memory safe)
+        run: ./gradlew assembleDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx6g -Dfile.encoding=UTF-8" -Dandroid.enableR8=false
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
