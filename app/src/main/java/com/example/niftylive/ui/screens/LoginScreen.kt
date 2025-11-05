@@ -35,19 +35,24 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             Text("Login")
         }
 
-        when (state) {
-            is com.example.niftylive.viewmodel.AuthState.Loading -> {
-                Spacer(Modifier.height(12.dp))
-                CircularProgressIndicator()
+        when (val state = viewModel.state.collectAsState().value) {
+    is AuthState.Error -> {
+        Column {
+            Text(
+                text = "Error: ${state.message}",
+                color = Color.Red,
+                fontSize = 16.sp
+            )
+            if (!state.rawResponse.isNullOrBlank()) {
+                Text(
+                    text = "Raw:\n${state.rawResponse}",
+                    color = Color.DarkGray,
+                    fontSize = 12.sp
+                )
             }
-            is com.example.niftylive.viewmodel.AuthState.Success -> {
-                LaunchedEffect(Unit) { onLoginSuccess() }
-            }
-            is com.example.niftylive.viewmodel.AuthState.Error -> {
-                Spacer(Modifier.height(12.dp))
-                Text("Error: ${(state as com.example.niftylive.viewmodel.AuthState.Error).message}", color = MaterialTheme.colorScheme.error)
-            }
-            else -> {}
         }
+    }
+    else -> {}
+}
     }
 }
