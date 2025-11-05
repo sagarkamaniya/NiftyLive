@@ -2,7 +2,8 @@ name: Android Build (NiftyLive)
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -10,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # 🧠 Boost JVM heap for Gradle + D8
       JAVA_TOOL_OPTIONS: "-Xmx6g -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
       GRADLE_OPTS: "-Xmx6g -Dfile.encoding=UTF-8"
       ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
