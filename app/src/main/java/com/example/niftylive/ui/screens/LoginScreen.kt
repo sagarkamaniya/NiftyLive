@@ -11,13 +11,16 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.niftylive.viewmodel.AuthState
 import com.example.niftylive.viewmodel.AuthViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun LoginScreen(
     navController: NavController,
     viewModel: AuthViewModel
 ) {
-    val authState by viewModel.authState.collectAsState()
+    // Use the StateFlow name `state` that your AuthViewModel exposes
+    val authState by viewModel.state.collectAsState()
+
     var clientCode by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var apiKey by remember { mutableStateOf("") }
@@ -27,13 +30,15 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.TopCenter
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalAlignment = Alignment.Start
         ) {
-            Text("SmartAPI Login", fontSize = 24.sp)
+            Spacer(modifier = Modifier.height(24.dp))
+            Text("SmartAPI Login", fontSize = 28.sp)
 
             OutlinedTextField(
                 value = clientCode,
@@ -64,10 +69,10 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
             Button(
-                onClick = {
-                    viewModel.login(clientCode, password, apiKey, otp)
-                },
+                onClick = { viewModel.login(clientCode, password, apiKey, otp) },
                 enabled = authState !is AuthState.Loading,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -76,16 +81,19 @@ fun LoginScreen(
                 Text(if (authState is AuthState.Loading) "Logging in..." else "Login")
             }
 
-            when (val state = authState) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            when (val s = authState) {
                 is AuthState.Success -> {
                     Text(
-                        text = "Login Successful! Token: ${state.token.take(10)}...",
-                        color = MaterialTheme.colorScheme.primary
+                        text = "Login Successful! Token: ${s.token.takeIf { it.isNotBlank() } ?: "..."}",
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
 
-                    // 🔥 Navigate automatically after delay
-                    LaunchedEffect(Unit) {
-                        kotlinx.coroutines.delay(1000)
+                    // Navigate to dashboard after a short delay so user can read the message
+                    LaunchedEffect(s.token) {
+                        delay(800)
                         navController.navigate("dashboard") {
                             popUpTo("login") { inclusive = true }
                         }
@@ -94,12 +102,15 @@ fun LoginScreen(
 
                 is AuthState.Error -> {
                     Text(
-                        text = "Error: ${state.message}",
-                        color = MaterialTheme.colorScheme.error
+                        text = "Error: ${s.message}",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
 
-                else -> {}
+                else -> {
+                    // Idle - do nothing
+                }
             }
         }
     }
