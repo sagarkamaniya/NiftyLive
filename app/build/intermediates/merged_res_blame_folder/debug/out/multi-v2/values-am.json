@@ -1,0 +1,43 @@
+{
+    "logs": [
+        {
+            "outputFile": "/data/data/com.termux.nix/files/home/NiftyLive/app/build/intermediates/incremental/mergeDebugResources/merged.dir/values-am/values-am.xml",
+            "map": [
+                {
+                    "source": "/data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/7a645a90b51fbd26def82f12bcaa2d89/transformed/core-1.5.0/res/values-am/values-am.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "100",
+                        "endOffsets": "151"
+                    },
+                    "to": {
+                        "startLines": "12",
+                        "startColumns": "4",
+                        "startOffsets": "893",
+                        "endColumns": "100",
+                        "endOffsets": "989"
+                    }
+                },
+                {
+                    "source": "/data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/2abd16a0cbf5720f9cb15389bd2f7224/transformed/ui-1.0.5/res/values-am/values-am.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,188,265,357,435,531,613,691,757,823,893,958",
+                        "endColumns": "82,76,91,77,95,81,77,65,65,69,64,115",
+                        "endOffsets": "183,260,352,430,526,608,686,752,818,888,953,1069"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,13,14",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,188,265,357,435,531,613,691,757,823,994,1059",
+                        "endColumns": "82,76,91,77,95,81,77,65,65,69,64,115",
+                        "endOffsets": "183,260,352,430,526,608,686,752,818,888,1054,1170"
+                    }
+                }
+            ]
+        }
+    ]
+}

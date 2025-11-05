@@ -1,0 +1,43 @@
+{
+    "logs": [
+        {
+            "outputFile": "/data/data/com.termux.nix/files/home/NiftyLive/app/build/intermediates/incremental/mergeDebugResources/merged.dir/values-en-rGB/values-en-rGB.xml",
+            "map": [
+                {
+                    "source": "/data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/2abd16a0cbf5720f9cb15389bd2f7224/transformed/ui-1.0.5/res/values-en-rGB/values-en-rGB.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,197,279,373,455,555,644,728,793,857,930,996",
+                        "endColumns": "91,81,93,81,99,88,83,64,63,72,65,120",
+                        "endOffsets": "192,274,368,450,550,639,723,788,852,925,991,1112"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,13,14",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,197,279,373,455,555,644,728,793,857,1031,1097",
+                        "endColumns": "91,81,93,81,99,88,83,64,63,72,65,120",
+                        "endOffsets": "192,274,368,450,550,639,723,788,852,925,1092,1213"
+                    }
+                },
+                {
+                    "source": "/data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/7a645a90b51fbd26def82f12bcaa2d89/transformed/core-1.5.0/res/values-en-rGB/values-en-rGB.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "100",
+                        "endOffsets": "151"
+                    },
+                    "to": {
+                        "startLines": "12",
+                        "startColumns": "4",
+                        "startOffsets": "930",
+                        "endColumns": "100",
+                        "endOffsets": "1026"
+                    }
+                }
+            ]
+        }
+    ]
+}

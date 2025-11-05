@@ -1,0 +1,84 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.example.niftylive"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+8-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml
+9        android:targetSdkVersion="31" />
+9-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:3:5-67
+11-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:3:22-64
+12
+13    <application
+13-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:5:5-19:19
+14        android:name="com.example.niftylive.NiftyApplication"
+14-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:6:9-41
+15        android:allowBackup="true"
+15-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:8:9-35
+16        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+16-->[androidx.core:core:1.5.0] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/7a645a90b51fbd26def82f12bcaa2d89/transformed/core-1.5.0/AndroidManifest.xml:24:18-86
+17        android:debuggable="true"
+18        android:extractNativeLibs="false"
+19        android:label="NiftyLive" >
+19-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:7:9-34
+20        <activity
+20-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:10:9-17:20
+21            android:name="com.example.niftylive.MainActivity"
+21-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:11:13-41
+22            android:exported="true" >
+22-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:12:13-36
+23            <intent-filter>
+23-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:13:13-16:29
+24                <action android:name="android.intent.action.MAIN" />
+24-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:14:17-69
+24-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:14:25-66
+25
+26                <category android:name="android.intent.category.LAUNCHER" />
+26-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:15:17-77
+26-->/data/data/com.termux.nix/files/home/NiftyLive/app/src/main/AndroidManifest.xml:15:27-74
+27            </intent-filter>
+28        </activity>
+29
+30        <provider
+30-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:26:9-34:20
+31            android:name="androidx.startup.InitializationProvider"
+31-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:27:13-67
+32            android:authorities="com.example.niftylive.androidx-startup"
+32-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:28:13-68
+33            android:exported="false" >
+33-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:29:13-37
+34            <meta-data
+34-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:31:13-33:52
+35                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+35-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:32:17-85
+36                android:value="androidx.startup" />
+36-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:33:17-49
+37        </provider>
+38
+39        <receiver
+39-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:36:9-45:20
+40            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+40-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:37:13-76
+41            android:directBootAware="false"
+41-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:38:13-44
+42            android:enabled="true"
+42-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:39:13-35
+43            android:exported="true"
+43-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:40:13-36
+44            android:permission="android.permission.DUMP" >
+44-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:41:13-57
+45            <intent-filter>
+45-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:42:13-44:29
+46                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+46-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:43:17-91
+46-->[androidx.profileinstaller:profileinstaller:1.0.4] /data/data/com.termux.nix/files/home/.gradle/caches/transforms-3/e81ad207d9f64ea81ed1e0b332f31d9c/transformed/profileinstaller-1.0.4/AndroidManifest.xml:43:25-88
+47            </intent-filter>
+48        </receiver>
+49    </application>
+50
+51</manifest>
