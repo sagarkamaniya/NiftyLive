@@ -7,26 +7,22 @@ import androidx.navigation.compose.composable
 import com.example.niftylive.ui.screens.LoginScreen
 import com.example.niftylive.ui.screens.DashboardScreen
 
-/**
- * Handles all in-app navigation using Jetpack Compose Navigation.
- * Start destination is LoginScreen → navigates to DashboardScreen after success.
- */
-@Composable
-fun AppNavGraph(navController: NavHostController) {
+sealed class Screen(val route: String) {
+    object Login : Screen("login")
+    object Dashboard : Screen("dashboard")
+}
 
+@Composable
+fun NavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = Screen.Login.route
     ) {
-
-        // 🟢 LOGIN SCREEN
-        composable("login") {
+        composable(Screen.Login.route) {
             LoginScreen(navController = navController)
         }
-
-        // 🟣 DASHBOARD SCREEN
-        composable("dashboard") {
-            DashboardScreen()
+        composable(Screen.Dashboard.route) {
+            DashboardScreen(navController = navController)
         }
     }
 }
