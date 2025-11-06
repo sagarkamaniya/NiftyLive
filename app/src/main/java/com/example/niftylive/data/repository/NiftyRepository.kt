@@ -27,47 +27,46 @@ class NiftyRepository(
      * Automatically handles plain-text or invalid JSON responses.
      */
     suspend fun loginWithCredentials(
-        clientCode: String,
-        password: String,
-        apiKey: String,
-        authCode: String
-    ): Response<LoginResponse> {
-        val body = mapOf(
-            "clientcode" to clientCode,
-            "password" to password,
-            "totp" to authCode
-        )
+    clientCode: String,
+    password: String,
+    apiKey: String,
+    authCode: String
+): Response<LoginResponse> {
+    val body = mapOf(
+        "clientcode" to clientCode,
+        "password" to password,
+        "totp" to authCode
+    )
 
-        val rawResponse = api.login(apiKey, body)
+    val rawResponse = api.login(apiKey = apiKey, body = body)
 
-        // ✅ If response is JSON, just return as-is
-        if (rawResponse.isSuccessful && rawResponse.body() != null) {
-            return rawResponse
-        }
-
-        // ✅ If SmartAPI sent text instead of JSON, handle manually
-        val rawText = rawResponse.errorBody()?.string()
-            ?: rawResponse.body()?.toString()
-            ?: "Empty or malformed response from SmartAPI"
-
-        Log.e("SmartAPI_RAW", rawText)
-
-        // Try parsing manually with lenient Moshi (to avoid crash)
-        return try {
-            val moshi = Moshi.Builder().build()
-            val adapter = moshi.adapter(LoginResponse::class.java).lenient()
-            val parsed = adapter.fromJson(rawText)
-            if (parsed != null) {
-                Response.success(parsed)
-            } else {
-                Response.error(500, ResponseBody.create(null, rawText))
-            }
-        } catch (e: Exception) {
-            Log.e("SmartAPI_PARSE", "Invalid JSON: ${e.localizedMessage}")
-            Response.error(500, ResponseBody.create(null, "Invalid response: $rawText"))
-        }
+    // ✅ If response is JSON, just return as-is
+    if (rawResponse.isSuccessful && rawResponse.body() != null) {
+        return rawResponse
     }
 
+    // ✅ If SmartAPI sent text instead of JSON, handle manually
+    val rawText = rawResponse.errorBody()?.string()
+        ?: rawResponse.body()?.toString()
+        ?: "Empty or malformed response from SmartAPI"
+
+    Log.e("SmartAPI_RAW", rawText)
+
+    // Try parsing manually with lenient Moshi (to avoid crash)
+    return try {
+        val moshi = Moshi.Builder().build()
+        val adapter = moshi.adapter(LoginResponse::class.java).lenient()
+        val parsed = adapter.fromJson(rawText)
+        if (parsed != null) {
+            Response.success(parsed)
+        } else {
+            Response.error(500, ResponseBody.create(null, rawText))
+        }
+    } catch (e: Exception) {
+        Log.e("SmartAPI_PARSE", "Invalid JSON: ${e.localizedMessage}")
+        Response.error(500, ResponseBody.create(null, "Invalid response: $rawText"))
+    }
+}
     /** Save tokens from SmartAPI login response */
    fun saveTokens(loginData: LoginResponse?) {
     loginData?.data?.access_token?.let { prefs.saveString(KEY_ACCESS, it) }
