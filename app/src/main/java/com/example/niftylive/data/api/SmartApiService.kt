@@ -9,14 +9,20 @@ import retrofit2.http.POST
 
 interface SmartApiService {
 
-    // ✅ SmartAPI Login Endpoint (Exchange auth_code for access_token)
-    @POST("rest/secure/angelbroking/user/v1/session")
+    // ✅ Correct SmartAPI endpoint for login
+    @POST("rest/auth/angelone/v1/loginByPassword")
     suspend fun login(
+        @Header("X-UserType") userType: String = "USER",
+        @Header("X-SourceID") source: String = "WEB",
+        @Header("X-ClientLocalIP") localIP: String = "127.0.0.1",
+        @Header("X-ClientPublicIP") publicIP: String = "127.0.0.1",
+        @Header("X-MACAddress") mac: String = "00:00:00:00:00:00",
         @Header("X-PrivateKey") apiKey: String,
+        @Header("Accept") accept: String = "application/json",
         @Body body: Map<String, @JvmSuppressWildcards Any>
     ): Response<LoginResponse>
 
-    // ✅ Quote API (fetch live market quote)
+    // ✅ Quote API endpoint (after login)
     @POST("rest/secure/angelbroking/market/v1/quote/")
     suspend fun getQuote(
         @Header("Authorization") bearer: String,
