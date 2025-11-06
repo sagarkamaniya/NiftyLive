@@ -2,67 +2,75 @@ package com.example.niftylive.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.niftylive.di.ServiceLocator
+import com.example.niftylive.data.repository.NiftyRepository
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import android.util.Log
 
-// UI States for login
-sealed class AuthState {
-    object Idle : AuthState()
-    object Loading : AuthState()
-    data class Success(val token: String) : AuthState()
-    data class Error(val message: String) : AuthState()
-}
+class AuthViewModel(
+    private val repository: NiftyRepository
+) : ViewModel() {
 
-class AuthViewModel : ViewModel() {
-
-    private val repo = ServiceLocator.niftyRepository
-
-    private val _state = MutableStateFlow<AuthState>(AuthState.Idle)
-    val state: StateFlow<AuthState> = _state
+    private val _loginStatus = MutableStateFlow<String?>(null)
+    val loginStatus: StateFlow<String?> = _loginStatus
 
     /**
-     * Handles SmartAPI Login process.
-     * Performs field validation before making network call.
+     * Handle SmartAPI login
      */
     fun login(clientCode: String, password: String, apiKey: String, authCode: String) {
         viewModelScope.launch {
-            // 🛑 Step 1: Validate input fields
+            //  Validate all fields
             if (clientCode.isBlank() || password.isBlank() || apiKey.isBlank() || authCode.isBlank()) {
-                _state.value = AuthState.Error("All fields are required.")
+                _loginStatus.value = "Please fill all fields"
                 return@launch
             }
 
-            _state.value = AuthState.Loading
-
             try {
-                // 🧠 Step 2: Call repository to make API request
-                val resp = repo.loginWithCredentials(clientCode, password, apiKey, authCode)
+                //  Attempt login
+                val response = repository.loginWithCredentials(
+                    clientCode.trim(),
+                    password.trim(),
+                    apiKey.trim(),
+                    authCode.trim()
+                )
 
-                // 🧩 Step 3: Check for valid SmartAPI response
-                val responseBody = resp.body()
-                if (resp.isSuccessful && responseBody?.data?.access_token != null) {
-                    repo.saveTokens(responseBody)
-                    repo.saveCredentials(clientCode, apiKey)
-                    _state.value = AuthState.Success(responseBody.data.access_token!!)
+                if (response.isSuccessful) {
+                    val loginResponse = response.body()
+
+                    //  Success case
+                    if (loginResponse?.status.equals("success", ignoreCase = true)
+                        || loginResponse?.data?.access_token != null
+                    ) {
+                        repository.saveTokens(loginResponse)
+                        _loginStatus.value =
+                            "Login Successful! Token: ${loginResponse?.data?.access_token ?: "Unknown"}"
+                        Log.i("SMARTAPI_LOGIN", "Login successful for $clientCode")
+                    } else {
+                        //  SmartAPI returned 200 but status = false
+                        val errorMsg =
+                            response.errorBody()?.string()
+                                ?: "SmartAPI returned failure response"
+                        Log.e("SMARTAPI_LOGIN_FAIL", errorMsg)
+                        _loginStatus.value =
+                            "Error: ${loginResponse?.status ?: "Invalid credentials"}"
+                    }
                 } else {
-                    val errorMsg = resp.errorBody()?.string()
-                        ?: responseBody?.message
-                        ?: "Login failed (${resp.code()})"
-                    _state.value = AuthState.Error(errorMsg)
+                    //  Non-200 error (HTTP 4xx/5xx)
+                    val errorMsg = response.errorBody()?.string() ?: "Unknown server error"
+                    Log.e("SMARTAPI_HTTP_FAIL", "HTTP ${response.code()} - $errorMsg")
+                    _loginStatus.value = "Error: Login failed (${response.code()})"
                 }
             } catch (e: Exception) {
-                // 🧱 Step 4: Catch and display network or parsing errors
-                _state.value = AuthState.Error(e.localizedMessage ?: "Network error occurred.")
+                //  Catch any network or parsing exceptions
+                Log.e("SMARTAPI_EXCEPTION", e.localizedMessage ?: "Unknown exception")
+                _loginStatus.value =
+                    "Error: ${e.localizedMessage ?: "Unexpected exception occurred"}"
             }
         }
     }
 
-    /**
-     * Resets login state (useful when navigating back to login screen)
-     */
-    fun resetState() {
-        _state.value = AuthState.Idle
+    fun clearStatus() {
+        _loginStatus.value = null
     }
 }
