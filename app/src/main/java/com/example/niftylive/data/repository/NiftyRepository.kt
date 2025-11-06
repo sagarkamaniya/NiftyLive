@@ -72,7 +72,7 @@ class NiftyRepository(
    fun saveTokens(loginData: LoginResponse?) {
     loginData?.data?.access_token?.let { prefs.saveString(KEY_ACCESS, it) }
     loginData?.data?.refresh_token?.let { prefs.saveString(KEY_REFRESH, it) }
-    loginData?.data?.fee_token?.let { prefs.saveString(KEY_FEED, it) }
+    loginData?.data?.feed_token?.let { prefs.saveString(KEY_FEED, it) }
 }
 
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
