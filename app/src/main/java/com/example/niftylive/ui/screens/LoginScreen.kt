@@ -10,10 +10,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.niftylive.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
+    navController: NavController,
     viewModel: AuthViewModel = viewModel()
 ) {
     val loginStatus by viewModel.loginStatus.collectAsState()
@@ -78,16 +80,27 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ✅ Display login messages or errors
         loginStatus?.let {
-            val color = if (it.contains("Success", true)) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.error
+            val color = if (it.contains("Success", true)) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.error
+            }
 
             Text(
                 text = it,
                 color = color,
                 style = MaterialTheme.typography.bodyLarge
             )
+
+            // ✅ Navigate to Dashboard after successful login
+            if (it.contains("Success", true)) {
+                LaunchedEffect(Unit) {
+                    navController.navigate("dashboard") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+            }
         }
     }
 }
