@@ -9,8 +9,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.rememberNavController
 import com.example.niftylive.di.ServiceLocator
-import com.example.niftylive.ui.screens.LoginScreen
+import com.example.niftylive.ui.navigation.NavGraph
 import com.example.niftylive.ui.theme.NiftyLiveTheme
 
 class MainActivity : ComponentActivity() {
@@ -34,7 +35,9 @@ class MainActivity : ComponentActivity() {
                     if (initError != null) {
                         InitializationErrorScreen(initError)
                     } else {
-                        LoginScreen()
+                        // ✅ Create a NavController for app navigation
+                        val navController = rememberNavController()
+                        NavGraph(navController = navController)
                     }
                 }
             }
@@ -63,7 +66,7 @@ fun InitializationErrorScreen(message: String) {
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = { /* optional: could trigger restart or retry */ }) {
+        Button(onClick = { /* You can add a retry logic later */ }) {
             Text("Retry")
         }
     }
