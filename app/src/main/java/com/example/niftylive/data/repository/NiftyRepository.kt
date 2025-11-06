@@ -70,9 +70,9 @@ class NiftyRepository(
 
     /** Save tokens from SmartAPI login response */
    fun saveTokens(loginData: LoginResponse?) {
-    loginData?.data?.jwtToken?.let { prefs.saveString(KEY_ACCESS, it) }
-    loginData?.data?.refreshToken?.let { prefs.saveString(KEY_REFRESH, it) }
-    loginData?.data?.feedToken?.let { prefs.saveString(KEY_FEED, it) }
+    loginData?.data?.access_token?.let { prefs.saveString(KEY_ACCESS, it) }
+    loginData?.data?.refresh_token?.let { prefs.saveString(KEY_REFRESH, it) }
+    loginData?.data?.fee_token?.let { prefs.saveString(KEY_FEED, it) }
 }
 
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)

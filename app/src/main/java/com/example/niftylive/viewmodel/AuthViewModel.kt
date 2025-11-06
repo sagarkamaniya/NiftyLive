@@ -42,10 +42,10 @@ class AuthViewModel : ViewModel() {
 
                 // 🧩 Step 3: Check for valid SmartAPI response
                 val responseBody = resp.body()
-                if (resp.isSuccessful && responseBody?.data?.jwtToken != null) {
+                if (resp.isSuccessful && responseBody?.data?.access_token != null) {
                     repo.saveTokens(responseBody)
                     repo.saveCredentials(clientCode, apiKey)
-                    _state.value = AuthState.Success(responseBody.data.jwtToken!!)
+                    _state.value = AuthState.Success(responseBody.data.access_token!!)
                 } else {
                     val errorMsg = resp.errorBody()?.string()
                         ?: responseBody?.message
