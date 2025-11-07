@@ -38,17 +38,18 @@ class AuthViewModel(private val repo: NiftyRepository) : ViewModel() {
         viewModelScope.launch {
             _state.value = AuthState.Loading
             try {
-                val (response, rawText) = repo.loginWithCredentials(code, pass, key, otp)
-                if (response.isSuccessful && response.body()?.data?.access_token != null) {
-                    repo.saveTokens(response.body())
-                    repo.saveCredentials(code, key)
-                    _state.value = AuthState.Success("✅ Login successful")
-                } else {
-                    _state.value = AuthState.Error("Login failed: $rawText")
-                }
-            } catch (e: Exception) {
-                _state.value = AuthState.Error("Exception: ${e.localizedMessage}")
-            }
+    val (loginData, debugInfo) = repo.loginWithCredentials(code, pass, key, otp)
+
+    if (loginData?.data?.access_token != null) {
+        repo.saveTokens(loginData)
+        repo.saveCredentials(code, key)
+        _state.value = AuthState.Success("✅ Login successful")
+    } else {
+        _state.value = AuthState.Error("Login failed: $debugInfo")
+    }
+} catch (e: Exception) {
+    _state.value = AuthState.Error("Exception: ${e.localizedMessage}")
+}
         }
     }
 }
