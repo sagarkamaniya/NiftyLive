@@ -22,15 +22,12 @@ class NiftyRepository(
         const val KEY_APIKEY = "api_key"
     }
 
-    /**
-     * Logs in to SmartAPI and prints full raw server response
-     */
     suspend fun loginWithCredentials(
         clientCode: String,
         password: String,
         apiKey: String,
         authCode: String
-    ): Response<LoginResponse> {
+    ): Pair<Response<LoginResponse>, String> {
         val body = mapOf(
             "clientcode" to clientCode,
             "password" to password,
@@ -40,33 +37,28 @@ class NiftyRepository(
         Log.d("SmartAPI_REQ", "→ Sending login for $clientCode with key=$apiKey")
 
         val rawResponse = api.login(apiKey, body)
-
-        val rawBody = try {
+        val rawText = try {
             rawResponse.errorBody()?.string()
                 ?: rawResponse.body().toString()
         } catch (e: Exception) {
-            "Unable to read body: ${e.localizedMessage}"
+            "Error reading body: ${e.localizedMessage}"
         }
 
-        Log.d("SmartAPI_RES_CODE", "HTTP ${rawResponse.code()}")
-        Log.d("SmartAPI_RES_RAW", rawBody)
+        Log.d("SmartAPI_RES_RAW", rawText)
 
-        // Try parse JSON if successful
-        return try {
+        // Try parse JSON safely
+        val parsedResponse = try {
             val moshi = Moshi.Builder().build()
             val adapter = moshi.adapter(LoginResponse::class.java).lenient()
-            val parsed = adapter.fromJson(rawBody)
-            if (parsed != null) {
-                Log.d("SmartAPI_PARSED", parsed.toString())
-                Response.success(parsed)
-            } else {
-                Log.e("SmartAPI_PARSE", "JSON parsing failed")
-                Response.error(500, ResponseBody.create(null, rawBody))
-            }
+            val parsed = adapter.fromJson(rawText)
+            if (parsed != null) Response.success(parsed)
+            else Response.error(500, ResponseBody.create(null, rawText))
         } catch (e: Exception) {
-            Log.e("SmartAPI_ERR", "JSON parse error: ${e.localizedMessage}")
-            Response.error(500, ResponseBody.create(null, "Invalid response: $rawBody"))
+            Log.e("SmartAPI_PARSE", "Failed to parse: ${e.localizedMessage}")
+            Response.error(500, ResponseBody.create(null, rawText))
         }
+
+        return Pair(parsedResponse, rawText)
     }
 
     fun saveTokens(loginData: LoginResponse?) {
@@ -90,23 +82,4 @@ class NiftyRepository(
 
     fun getClientCode(): String? = prefs.getString(KEY_CLIENT)
     fun getApiKey(): String? = prefs.getString(KEY_APIKEY)
-
-    suspend fun getQuoteForToken(token: String): InstrumentQuote? {
-        val access = getAccessToken() ?: return null
-        val apiKey = getApiKey() ?: return null
-        val bearer = "Bearer $access"
-
-        val body = mapOf(
-            "mode" to "FULL",
-            "exchangeTokens" to mapOf("NSE" to listOf(token))
-        )
-
-        val resp: Response<QuoteResponse> = api.getQuote(bearer, apiKey, body)
-        if (resp.isSuccessful) {
-            return resp.body()?.data?.values?.firstOrNull()
-        } else {
-            Log.e("SmartAPI_QUOTE_ERR", "Failed to fetch quote: ${resp.code()} ${resp.errorBody()?.string()}")
-        }
-        return null
-    }
 }

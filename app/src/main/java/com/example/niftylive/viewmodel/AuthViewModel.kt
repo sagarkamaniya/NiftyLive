@@ -22,12 +22,23 @@ class AuthViewModel : ViewModel() {
     val state: StateFlow<AuthState> = _state
 
     fun login(clientCode: String, password: String, apiKey: String, authCode: String) {
-        // ✅ Basic input validation before calling API
-        if (clientCode.isBlank() || password.isBlank() || apiKey.isBlank() || authCode.isBlank()) {
-            _state.value = AuthState.Error("Please fill in all fields")
-            return
-        }
+    viewModelScope.launch {
+        try {
+            val (response, rawText) = repo.loginWithCredentials(clientCode, password, apiKey, authCode)
 
+            if (response.isSuccessful && response.body()?.data?.jwtToken != null) {
+                val data = response.body()!!.data!!
+                repo.saveTokens(response.body())
+                _token.value = data.jwtToken ?: ""
+                _authState.value = AuthState.Success("Login Successful! Token saved.")
+            } else {
+                _authState.value = AuthState.Error("Invalid response:\n$rawText")
+            }
+        } catch (e: Exception) {
+            _authState.value = AuthState.Error("Exception: ${e.localizedMessage}")
+        }
+    }
+}
         viewModelScope.launch {
             _state.value = AuthState.Loading
             try {
