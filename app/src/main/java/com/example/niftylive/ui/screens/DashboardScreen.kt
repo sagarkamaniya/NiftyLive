@@ -20,7 +20,6 @@ fun DashboardScreen(navController: NavHostController) {
     var quoteText by remember { mutableStateOf("Loading...") }
     var isLoading by remember { mutableStateOf(false) }
 
-    //  Load saved tokens and client code on start
     LaunchedEffect(Unit) {
         accessToken = repo.getAccessToken() ?: "No Token Found"
         clientCode = repo.getClientCode() ?: "Unknown"
@@ -29,11 +28,11 @@ fun DashboardScreen(navController: NavHostController) {
 
         scope.launch {
             try {
-                val nifty = repo.getQuoteForToken("26000") // NIFTY 50 token
+                val nifty = repo.getQuoteForToken("26000") // NIFTY 50
                 quoteText = if (nifty != null) {
-                    " NIFTY 50: ${nifty.lastPrice ?: 0.0}  (${nifty.percentChange ?: 0.0}%)"
+                    "📊 NIFTY 50: ₹${nifty.lastPrice ?: 0.0}  (${nifty.percentChange ?: 0.0}%)"
                 } else {
-                    " Failed to fetch quote"
+                    "⚠️ Failed to fetch quote"
                 }
             } catch (e: Exception) {
                 quoteText = "Error: ${e.localizedMessage}"
@@ -54,16 +53,11 @@ fun DashboardScreen(navController: NavHostController) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = " Welcome to NiftyLive Dashboard",
-                style = MaterialTheme.typography.titleLarge
-            )
-
+            Text("Welcome to NiftyLive Dashboard", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(16.dp))
-            Text(" Client Code: $clientCode")
-
+            Text("Client Code: $clientCode")
             Spacer(modifier = Modifier.height(8.dp))
-            Text(" Access Token: ${accessToken.take(20)}...")
+            Text("Access Token: ${accessToken.take(20)}...")
 
             Spacer(modifier = Modifier.height(16.dp))
             if (isLoading)

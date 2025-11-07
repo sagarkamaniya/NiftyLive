@@ -24,55 +24,55 @@ class NiftyRepository(
 
     /**
      * Logs in to SmartAPI using client credentials and TOTP (authCode).
-     * Automatically handles plain-text or invalid JSON responses.
+     * Automatically stores tokens if successful.
      */
     suspend fun loginWithCredentials(
-    clientCode: String,
-    password: String,
-    apiKey: String,
-    authCode: String
-): Response<LoginResponse> {
-    val body = mapOf(
-        "clientcode" to clientCode,
-        "password" to password,
-        "totp" to authCode
-    )
+        clientCode: String,
+        password: String,
+        apiKey: String,
+        authCode: String
+    ): Response<LoginResponse> {
+        val body = mapOf(
+            "clientcode" to clientCode,
+            "password" to password,
+            "totp" to authCode
+        )
 
-    val rawResponse = api.login(apiKey = apiKey, body = body)
-
-    // ✅ If response is JSON, just return as-is
-    if (rawResponse.isSuccessful && rawResponse.body() != null) {
-        return rawResponse
-    }
-
-    // ✅ If SmartAPI sent text instead of JSON, handle manually
-    val rawText = rawResponse.errorBody()?.string()
-        ?: rawResponse.body()?.toString()
-        ?: "Empty or malformed response from SmartAPI"
-
-    Log.e("SmartAPI_RAW", rawText)
-
-    // Try parsing manually with lenient Moshi (to avoid crash)
-    return try {
-        val moshi = Moshi.Builder().build()
-        val adapter = moshi.adapter(LoginResponse::class.java).lenient()
-        val parsed = adapter.fromJson(rawText)
-        if (parsed != null) {
-            Response.success(parsed)
-        } else {
-            Response.error(500, ResponseBody.create(null, rawText))
+        val rawResponse = api.login(apiKey, body)
+        if (rawResponse.isSuccessful && rawResponse.body() != null) {
+            saveTokens(rawResponse.body())
+            saveCredentials(clientCode, apiKey)
+            return rawResponse
         }
-    } catch (e: Exception) {
-        Log.e("SmartAPI_PARSE", "Invalid JSON: ${e.localizedMessage}")
-        Response.error(500, ResponseBody.create(null, "Invalid response: $rawText"))
+
+        val rawText = rawResponse.errorBody()?.string()
+            ?: rawResponse.body()?.toString()
+            ?: "Empty or malformed response from SmartAPI"
+
+        Log.e("SmartAPI_RAW", rawText)
+
+        return try {
+            val moshi = Moshi.Builder().build()
+            val adapter = moshi.adapter(LoginResponse::class.java).lenient()
+            val parsed = adapter.fromJson(rawText)
+            if (parsed != null) {
+                saveTokens(parsed)
+                Response.success(parsed)
+            } else {
+                Response.error(500, ResponseBody.create(null, rawText))
+            }
+        } catch (e: Exception) {
+            Log.e("SmartAPI_PARSE", "Invalid JSON: ${e.localizedMessage}")
+            Response.error(500, ResponseBody.create(null, "Invalid response: $rawText"))
+        }
     }
-}
-    /** Save tokens from SmartAPI login response */
-   fun saveTokens(loginData: LoginResponse?) {
-    loginData?.data?.access_token?.let { prefs.saveString(KEY_ACCESS, it) }
-    loginData?.data?.refresh_token?.let { prefs.saveString(KEY_REFRESH, it) }
-    loginData?.data?.feed_token?.let { prefs.saveString(KEY_FEED, it) }
-}
+
+    /** Save tokens to SecurePrefs */
+    fun saveTokens(loginData: LoginResponse?) {
+        loginData?.data?.jwtToken?.let { prefs.saveString(KEY_ACCESS, it) }
+        loginData?.data?.refreshToken?.let { prefs.saveString(KEY_REFRESH, it) }
+        loginData?.data?.feedToken?.let { prefs.saveString(KEY_FEED, it) }
+    }
 
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
     fun getFeedToken(): String? = prefs.getString(KEY_FEED)
@@ -85,7 +85,7 @@ class NiftyRepository(
     fun getClientCode(): String? = prefs.getString(KEY_CLIENT)
     fun getApiKey(): String? = prefs.getString(KEY_APIKEY)
 
-    /** Fetch live quote for an instrument token */
+    /** Fetch live quote for NIFTY or any instrument token */
     suspend fun getQuoteForToken(token: String): InstrumentQuote? {
         val access = getAccessToken() ?: return null
         val apiKey = getApiKey() ?: return null
