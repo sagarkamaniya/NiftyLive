@@ -8,7 +8,6 @@ import com.example.niftylive.ui.screens.LoginScreen
 import com.example.niftylive.ui.screens.DashboardScreen
 import com.example.niftylive.viewmodel.AuthViewModel
 import com.example.niftylive.viewmodel.DashboardViewModel
-import com.example.niftylive.data.repository.NiftyRepository
 
 @Composable
 fun NavGraph(
@@ -27,12 +26,7 @@ fun NavGraph(
         composable("dashboard") {
             DashboardScreen(
                 viewModel = dashboardViewModel,
-                onLogout = {
-                    onLogout()
-                    navController.navigate("login") {
-                        popUpTo("dashboard") { inclusive = true }
-                    }
-                }
+                onLogout = onLogout
             )
         }
     }

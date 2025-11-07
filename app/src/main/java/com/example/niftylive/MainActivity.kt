@@ -3,71 +3,47 @@ package com.example.niftylive
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.remember
 import androidx.navigation.compose.rememberNavController
-import com.example.niftylive.di.ServiceLocator
 import com.example.niftylive.ui.navigation.NavGraph
 import com.example.niftylive.ui.theme.NiftyLiveTheme
+import com.example.niftylive.viewmodel.AuthViewModel
+import com.example.niftylive.viewmodel.DashboardViewModel
+import com.example.niftylive.di.ServiceLocator
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Try initializing ServiceLocator safely
-        var initError: String? = null
-        try {
-            ServiceLocator.initialize(applicationContext)
-        } catch (t: Throwable) {
-            initError = "Failed to initialize app services: ${t.localizedMessage ?: t::class.java.simpleName}"
-        }
+        ServiceLocator.initialize(applicationContext)
 
         setContent {
             NiftyLiveTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    if (initError != null) {
-                        InitializationErrorScreen(initError)
-                    } else {
-                        // ✅ Create a NavController for app navigation
-                        val navController = rememberNavController()
-                        NavGraph(navController = navController)
+                Surface(color = MaterialTheme.colorScheme.background) {
+                    val navController = rememberNavController()
+
+                    // Instantiate ViewModels manually (no Hilt)
+                    val authViewModel = remember {
+                        AuthViewModel(ServiceLocator.niftyRepository)
                     }
+                    val dashboardViewModel = remember {
+                        DashboardViewModel(ServiceLocator.niftyRepository)
+                    }
+
+                    NavGraph(
+                        navController = navController,
+                        authViewModel = authViewModel,
+                        dashboardViewModel = dashboardViewModel,
+                        onLogout = {
+                            dashboardViewModel.logout()
+                            navController.navigate("login") {
+                                popUpTo("dashboard") { inclusive = true }
+                            }
+                        }
+                    )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun InitializationErrorScreen(message: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            "⚠️ App Initialization Failed",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.error
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = { /* You can add a retry logic later */ }) {
-            Text("Retry")
         }
     }
 }

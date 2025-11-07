@@ -14,50 +14,41 @@ sealed class AuthState {
     data class Error(val message: String) : AuthState()
 }
 
-class AuthViewModel(
-    private val repo: NiftyRepository
-) : ViewModel() {
+class AuthViewModel(private val repo: NiftyRepository) : ViewModel() {
 
-    private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
-    val authState = _authState.asStateFlow()
+    private val _state = MutableStateFlow<AuthState>(AuthState.Idle)
+    val state = _state.asStateFlow()
 
-    private val _token = MutableStateFlow("")
-    val token = _token.asStateFlow()
+    val clientCode = MutableStateFlow(repo.getClientCode() ?: "")
+    val password = MutableStateFlow("")
+    val apiKey = MutableStateFlow(repo.getApiKey() ?: "")
+    val totp = MutableStateFlow("")
 
-    /**
-     * Attempts SmartAPI login and shows full raw response if something fails
-     */
-    fun login(clientCode: String, password: String, apiKey: String, authCode: String) {
+    fun login() {
+        val code = clientCode.value.trim()
+        val pass = password.value.trim()
+        val key = apiKey.value.trim()
+        val otp = totp.value.trim()
+
+        if (code.isEmpty() || pass.isEmpty() || key.isEmpty() || otp.isEmpty()) {
+            _state.value = AuthState.Error("⚠️ Please fill in all fields.")
+            return
+        }
+
         viewModelScope.launch {
-            _authState.value = AuthState.Loading
-
+            _state.value = AuthState.Loading
             try {
-                val (response, rawText) = repo.loginWithCredentials(
-                    clientCode = clientCode,
-                    password = password,
-                    apiKey = apiKey,
-                    authCode = authCode
-                )
-
-                if (response.isSuccessful && response.body()?.data?.jwtToken != null) {
-                    val data = response.body()!!.data!!
+                val (response, rawText) = repo.loginWithCredentials(code, pass, key, otp)
+                if (response.isSuccessful && response.body()?.data?.access_token != null) {
                     repo.saveTokens(response.body())
-                    _token.value = data.jwtToken ?: ""
-                    _authState.value = AuthState.Success("✅ Login Successful! Token saved.")
+                    repo.saveCredentials(code, key)
+                    _state.value = AuthState.Success("✅ Login successful")
                 } else {
-                    _authState.value = AuthState.Error("Invalid response:\n$rawText")
+                    _state.value = AuthState.Error("Login failed: $rawText")
                 }
             } catch (e: Exception) {
-                _authState.value = AuthState.Error("Exception: ${e.localizedMessage}")
+                _state.value = AuthState.Error("Exception: ${e.localizedMessage}")
             }
-        }
-    }
-
-    fun logout() {
-        viewModelScope.launch {
-            repo.saveTokens(null)
-            _token.value = ""
-            _authState.value = AuthState.Idle
         }
     }
 }
