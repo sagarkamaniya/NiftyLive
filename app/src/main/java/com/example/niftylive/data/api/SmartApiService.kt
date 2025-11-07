@@ -5,22 +5,25 @@ import com.example.niftylive.data.model.QuoteResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Header
+import retrofit2.http.Headers
 import retrofit2.http.POST
 
 interface SmartApiService {
 
-    /** SmartAPI Login Endpoint **/
-    @POST("smartapi/v1.0/login")
+    // ✅ SmartAPI login endpoint
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    @POST("smartapi/v1/login")
     suspend fun login(
-        @Header("X-PrivateKey") apiKey: String,
+        @Header("X-Api-Key") apiKey: String,
         @Body body: Map<String, String>
     ): Response<LoginResponse>
 
-    /** Get live market quote **/
-    @POST("smartapi/v1.0/quote")
+    // ✅ Quote endpoint
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    @POST("smartapi/v1/quote")
     suspend fun getQuote(
-        @Header("Authorization") bearer: String,
-        @Header("X-PrivateKey") apiKey: String,
+        @Header("Authorization") auth: String,
+        @Header("X-Api-Key") apiKey: String,
         @Body body: Map<String, Any>
     ): Response<QuoteResponse>
 }
