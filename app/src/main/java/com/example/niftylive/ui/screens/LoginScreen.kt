@@ -5,81 +5,108 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.niftylive.viewmodel.AuthState
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.example.niftylive.viewmodel.AuthViewModel
+import com.example.niftylive.viewmodel.AuthState
 
 @Composable
 fun LoginScreen(
-    viewModel: AuthViewModel,
-    onLoginSuccess: () -> Unit
+    navController: NavController? = null,
+    viewModel: AuthViewModel = hiltViewModel()
 ) {
-    val state by viewModel.state.collectAsState()
-    val clientCode by viewModel.clientCode.collectAsState()
-    val password by viewModel.password.collectAsState()
-    val apiKey by viewModel.apiKey.collectAsState()
-    val totp by viewModel.totp.collectAsState()
+    // ✅ Input states (fixes unresolved reference errors)
+    var clientCode by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var apiKey by remember { mutableStateOf("") }
+    var totp by remember { mutableStateOf("") }
 
-    LaunchedEffect(state) {
-        if (state is AuthState.Success) {
-            onLoginSuccess()
-        }
-    }
+    val state by viewModel.authState.collectAsState()
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Text("🔐 SmartAPI Login", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
 
+            // ✅ Client Code
             OutlinedTextField(
                 value = clientCode,
-                onValueChange = { viewModel.clientCode.value = it },
+                onValueChange = { clientCode = it },
                 label = { Text("Client Code") },
-                singleLine = true
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
             )
+            Spacer(Modifier.height(8.dp))
+
+            // ✅ Password
             OutlinedTextField(
                 value = password,
-                onValueChange = { viewModel.password.value = it },
+                onValueChange = { password = it },
                 label = { Text("Password") },
-                singleLine = true
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
             )
+            Spacer(Modifier.height(8.dp))
+
+            // ✅ API Key
             OutlinedTextField(
                 value = apiKey,
-                onValueChange = { viewModel.apiKey.value = it },
+                onValueChange = { apiKey = it },
                 label = { Text("API Key") },
-                singleLine = true
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
             )
+            Spacer(Modifier.height(8.dp))
+
+            // ✅ TOTP / Auth Code
             OutlinedTextField(
                 value = totp,
-                onValueChange = { viewModel.totp.value = it },
+                onValueChange = { totp = it },
                 label = { Text("TOTP / Auth Code") },
-                singleLine = true
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
             )
+            Spacer(Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(20.dp))
-
+            // ✅ Login Button
             Button(
-                onClick = { viewModel.login() },
+                onClick = {
+                    viewModel.login(clientCode, password, apiKey, totp)
+                },
+                modifier = Modifier.fillMaxWidth(),
                 enabled = state !is AuthState.Loading
             ) {
-                Text(if (state is AuthState.Loading) "Logging in..." else "Login")
+                Text("Login")
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
-            when (state) {
-                is AuthState.Error -> Text(
-                    text = (state as AuthState.Error).message,
-                    color = MaterialTheme.colorScheme.error
-                )
-                is AuthState.Success -> Text("✅ Login Successful")
-                else -> {}
+            // ✅ State feedback
+            when (val s = state) {
+                is AuthState.Loading -> {
+                    CircularProgressIndicator()
+                }
+                is AuthState.Error -> {
+                    Text(
+                        text = "Login failed: ${s.message}",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                is AuthState.Success -> {
+                    Text("✅ Login success!", color = MaterialTheme.colorScheme.primary)
+                    // Optionally navigate to Dashboard
+                    // navController?.navigate("dashboard")
+                }
+                else -> Unit
             }
         }
     }
