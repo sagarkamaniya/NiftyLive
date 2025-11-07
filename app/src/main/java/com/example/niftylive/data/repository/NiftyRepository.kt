@@ -6,9 +6,9 @@ import com.example.niftylive.data.model.InstrumentQuote
 import com.example.niftylive.data.model.LoginResponse
 import com.example.niftylive.data.model.QuoteResponse
 import com.example.niftylive.utils.SecurePrefs
+import com.squareup.moshi.Moshi
 import okhttp3.ResponseBody
 import retrofit2.Response
-import com.squareup.moshi.Moshi
 
 class NiftyRepository(
     private val api: SmartApiService,
@@ -22,6 +22,10 @@ class NiftyRepository(
         const val KEY_APIKEY = "api_key"
     }
 
+    /**
+     * Logs in to SmartAPI using client credentials and TOTP (authCode).
+     * Automatically handles plain-text or invalid JSON responses.
+     */
     suspend fun loginWithCredentials(
         clientCode: String,
         password: String,
@@ -34,43 +38,24 @@ class NiftyRepository(
             "totp" to authCode
         )
 
-        Log.d("SmartAPI_REQ", "→ Sending login for $clientCode with key=$apiKey")
-
         val rawResponse = api.login(apiKey, body)
         val rawText = try {
             rawResponse.errorBody()?.string()
                 ?: rawResponse.body().toString()
+                ?: "Empty response"
         } catch (e: Exception) {
-            "Error reading body: ${e.localizedMessage}"
+            "Error parsing raw body: ${e.localizedMessage}"
         }
 
-        Log.d("SmartAPI_RES_RAW", rawText)
-
-        // Try parse JSON safely
-        val parsedResponse = try {
-            val moshi = Moshi.Builder().build()
-            val adapter = moshi.adapter(LoginResponse::class.java).lenient()
-            val parsed = adapter.fromJson(rawText)
-            if (parsed != null) Response.success(parsed)
-            else Response.error(500, ResponseBody.create(null, rawText))
-        } catch (e: Exception) {
-            Log.e("SmartAPI_PARSE", "Failed to parse: ${e.localizedMessage}")
-            Response.error(500, ResponseBody.create(null, rawText))
-        }
-
-        return Pair(parsedResponse, rawText)
+        Log.d("SmartAPI", "Raw: $rawText")
+        return Pair(rawResponse, rawText)
     }
 
+    /** Save tokens from SmartAPI login response */
     fun saveTokens(loginData: LoginResponse?) {
-        val jwt = loginData?.data?.jwtToken
-        val refresh = loginData?.data?.refreshToken
-        val feed = loginData?.data?.feedToken
-
-        Log.d("SmartAPI_TOKEN", "jwt=$jwt refresh=$refresh feed=$feed")
-
-        jwt?.let { prefs.saveString(KEY_ACCESS, it) }
-        refresh?.let { prefs.saveString(KEY_REFRESH, it) }
-        feed?.let { prefs.saveString(KEY_FEED, it) }
+        loginData?.data?.access_token?.let { prefs.saveString(KEY_ACCESS, it) }
+        loginData?.data?.refresh_token?.let { prefs.saveString(KEY_REFRESH, it) }
+        loginData?.data?.feed_token?.let { prefs.saveString(KEY_FEED, it) }
     }
 
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
@@ -79,7 +64,21 @@ class NiftyRepository(
         prefs.saveString(KEY_CLIENT, clientCode)
         prefs.saveString(KEY_APIKEY, apiKey)
     }
-
     fun getClientCode(): String? = prefs.getString(KEY_CLIENT)
     fun getApiKey(): String? = prefs.getString(KEY_APIKEY)
+
+    /** Fetch live quote for an instrument token */
+    suspend fun getQuoteForToken(token: String): InstrumentQuote? {
+        val access = getAccessToken() ?: return null
+        val apiKey = getApiKey() ?: return null
+        val bearer = "Bearer $access"
+
+        val body = mapOf(
+            "mode" to "FULL",
+            "exchangeTokens" to mapOf("NSE" to listOf(token))
+        )
+
+        val resp: Response<QuoteResponse> = api.getQuote(bearer, apiKey, body)
+        return if (resp.isSuccessful) resp.body()?.data?.values?.firstOrNull() else null
+    }
 }

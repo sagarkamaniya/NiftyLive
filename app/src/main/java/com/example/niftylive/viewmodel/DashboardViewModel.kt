@@ -15,34 +15,23 @@ sealed class DashboardState {
     data class Error(val message: String) : DashboardState()
 }
 
-class DashboardViewModel(
-    private val repo: NiftyRepository
-) : ViewModel() {
+class DashboardViewModel(private val repo: NiftyRepository) : ViewModel() {
 
-    private val _dashboardState = MutableStateFlow<DashboardState>(DashboardState.Idle)
-    val dashboardState = _dashboardState.asStateFlow()
+    private val _state = MutableStateFlow<DashboardState>(DashboardState.Idle)
+    val state = _state.asStateFlow()
 
-    private val _clientCode = MutableStateFlow(repo.getClientCode() ?: "")
-    val clientCode = _clientCode.asStateFlow()
+    val clientCode = MutableStateFlow(repo.getClientCode() ?: "")
+    val accessToken = MutableStateFlow(repo.getAccessToken() ?: "")
 
-    private val _accessToken = MutableStateFlow(repo.getAccessToken() ?: "No Token Found...")
-    val accessToken = _accessToken.asStateFlow()
-
-    /**
-     * Fetch live quote for the provided token (e.g. NIFTY index)
-     */
     fun fetchQuote(token: String = "26000") {
         viewModelScope.launch {
-            _dashboardState.value = DashboardState.Loading
+            _state.value = DashboardState.Loading
             try {
                 val quote = repo.getQuoteForToken(token)
-                if (quote != null) {
-                    _dashboardState.value = DashboardState.Success(quote)
-                } else {
-                    _dashboardState.value = DashboardState.Error("⚠️ Failed to fetch quote")
-                }
+                if (quote != null) _state.value = DashboardState.Success(quote)
+                else _state.value = DashboardState.Error("⚠️ No quote found")
             } catch (e: Exception) {
-                _dashboardState.value = DashboardState.Error("Exception: ${e.localizedMessage}")
+                _state.value = DashboardState.Error("Exception: ${e.localizedMessage}")
             }
         }
     }
@@ -50,9 +39,7 @@ class DashboardViewModel(
     fun logout() {
         viewModelScope.launch {
             repo.saveTokens(null)
-            _accessToken.value = ""
-            _clientCode.value = ""
-            _dashboardState.value = DashboardState.Idle
+            _state.value = DashboardState.Idle
         }
     }
 }

@@ -6,23 +6,34 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.niftylive.ui.screens.LoginScreen
 import com.example.niftylive.ui.screens.DashboardScreen
-
-sealed class Screen(val route: String) {
-    object Login : Screen("login")
-    object Dashboard : Screen("dashboard")
-}
+import com.example.niftylive.viewmodel.AuthViewModel
+import com.example.niftylive.viewmodel.DashboardViewModel
+import com.example.niftylive.data.repository.NiftyRepository
 
 @Composable
-fun NavGraph(navController: NavHostController) {
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Login.route
-    ) {
-        composable(Screen.Login.route) {
-            LoginScreen(navController = navController)
+fun NavGraph(
+    navController: NavHostController,
+    authViewModel: AuthViewModel,
+    dashboardViewModel: DashboardViewModel,
+    onLogout: () -> Unit
+) {
+    NavHost(navController = navController, startDestination = "login") {
+        composable("login") {
+            LoginScreen(
+                viewModel = authViewModel,
+                onLoginSuccess = { navController.navigate("dashboard") }
+            )
         }
-        composable(Screen.Dashboard.route) {
-            DashboardScreen(navController = navController)
+        composable("dashboard") {
+            DashboardScreen(
+                viewModel = dashboardViewModel,
+                onLogout = {
+                    onLogout()
+                    navController.navigate("login") {
+                        popUpTo("dashboard") { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }
