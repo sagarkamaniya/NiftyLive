@@ -15,9 +15,9 @@ import com.example.niftylive.viewmodel.AuthState
 @Composable
 fun LoginScreen(
     navController: NavController? = null,
+    onLoginSuccess: () -> Unit = {},
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    // ✅ Input states (fixes unresolved reference errors)
     var clientCode by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var apiKey by remember { mutableStateOf("") }
@@ -36,7 +36,6 @@ fun LoginScreen(
             Text("🔐 SmartAPI Login", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(24.dp))
 
-            // ✅ Client Code
             OutlinedTextField(
                 value = clientCode,
                 onValueChange = { clientCode = it },
@@ -44,9 +43,9 @@ fun LoginScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(Modifier.height(8.dp))
 
-            // ✅ Password
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -55,9 +54,9 @@ fun LoginScreen(
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(Modifier.height(8.dp))
 
-            // ✅ API Key
             OutlinedTextField(
                 value = apiKey,
                 onValueChange = { apiKey = it },
@@ -65,9 +64,9 @@ fun LoginScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(Modifier.height(8.dp))
 
-            // ✅ TOTP / Auth Code
             OutlinedTextField(
                 value = totp,
                 onValueChange = { totp = it },
@@ -75,9 +74,9 @@ fun LoginScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(Modifier.height(16.dp))
 
-            // ✅ Login Button
             Button(
                 onClick = {
                     viewModel.login(clientCode, password, apiKey, totp)
@@ -90,23 +89,17 @@ fun LoginScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // ✅ State feedback
             when (val s = state) {
-                is AuthState.Loading -> {
-                    CircularProgressIndicator()
-                }
-                is AuthState.Error -> {
-                    Text(
-                        text = "Login failed: ${s.message}",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
+                is AuthState.Loading -> CircularProgressIndicator()
+                is AuthState.Error -> Text(
+                    text = "Login failed: ${s.message}",
+                    color = MaterialTheme.colorScheme.error
+                )
                 is AuthState.Success -> {
                     Text("✅ Login success!", color = MaterialTheme.colorScheme.primary)
-                    // Optionally navigate to Dashboard
-                    // navController?.navigate("dashboard")
+                    onLoginSuccess()
                 }
-                else -> Unit
+                else -> {}
             }
         }
     }

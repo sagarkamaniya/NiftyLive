@@ -6,28 +6,30 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.niftylive.ui.screens.LoginScreen
 import com.example.niftylive.ui.screens.DashboardScreen
-import com.example.niftylive.viewmodel.AuthViewModel
-import com.example.niftylive.viewmodel.DashboardViewModel
 
 @Composable
 fun NavGraph(
-    navController: NavHostController,
-    authViewModel: AuthViewModel,
-    dashboardViewModel: DashboardViewModel,
-    onLogout: () -> Unit
+    navController: NavHostController
 ) {
-    NavHost(navController = navController, startDestination = "login") {
+    NavHost(
+        navController = navController,
+        startDestination = "login"
+    ) {
+        // Login Screen
         composable("login") {
             LoginScreen(
-                viewModel = authViewModel,
-                onLoginSuccess = { navController.navigate("dashboard") }
+                navController = navController,
+                onLoginSuccess = {
+                    navController.navigate("dashboard") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
             )
         }
+
+        // Dashboard Screen
         composable("dashboard") {
-            DashboardScreen(
-                viewModel = dashboardViewModel,
-                onLogout = onLogout
-            )
+            DashboardScreen(navController = navController)
         }
     }
 }

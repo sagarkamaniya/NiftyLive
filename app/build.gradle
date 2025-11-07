@@ -1,7 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
-    id 'kotlin-kapt' // ✅ Needed for Moshi code generation
+    id 'kotlin-kapt' // ✅ Needed for Hilt & Moshi
 }
 
 android {
@@ -24,7 +24,6 @@ android {
         kotlinCompilerExtensionVersion '1.5.14'
     }
 
-    // ✅ Fix JVM mismatch
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -34,12 +33,10 @@ android {
         jvmTarget = '17'
     }
 
-    // ✅ Ensure Gradle uses JDK 17 toolchain (safe for GitHub Actions)
     kotlin {
         jvmToolchain(17)
     }
 
-    // ✅ Fix potential kapt issues in CI builds
     kapt {
         correctErrorTypes = true
     }
@@ -51,40 +48,47 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.24'
-    implementation 'androidx.core:core-ktx:1.12.0'
-    implementation 'androidx.activity:activity-compose:1.9.3'
+    // 🧱 Core Android & Kotlin
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.24"
+    implementation "androidx.core:core-ktx:1.13.1"
+    implementation "androidx.activity:activity-compose:1.9.3"
 
-    // ✅ Jetpack Compose (Material 3 & Compiler)
-    implementation platform('androidx.compose:compose-bom:2024.09.01')
-    implementation 'androidx.compose.ui:ui'
-    implementation 'androidx.compose.ui:ui-tooling-preview'
-    implementation 'androidx.compose.material3:material3'
-    debugImplementation 'androidx.compose.ui:ui-tooling'
-    debugImplementation 'androidx.compose.ui:ui-test-manifest'
+    // 🎨 Jetpack Compose
+    implementation platform("androidx.compose:compose-bom:2024.09.01")
+    implementation "androidx.compose.ui:ui"
+    implementation "androidx.compose.ui:ui-tooling-preview"
+    implementation "androidx.compose.material3:material3"
+    debugImplementation "androidx.compose.ui:ui-tooling"
+    debugImplementation "androidx.compose.ui:ui-test-manifest"
 
-    // ✅ Lifecycle + ViewModel (Compose compatible)
-    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.4'
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4'
+    // 🧭 Navigation
+    implementation "androidx.navigation:navigation-compose:2.8.3"
 
-    // ✅ Navigation
-    implementation 'androidx.navigation:navigation-compose:2.8.0'
+    // ⏱ Lifecycle & ViewModel (Compose Compatible)
+    implementation "androidx.lifecycle:lifecycle-runtime-compose:2.8.4"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4"
 
-    // ✅ Coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+    // 🧩 Dependency Injection - Hilt
+    implementation "com.google.dagger:hilt-android:2.52"
+    kapt "com.google.dagger:hilt-compiler:2.52"
+    implementation "androidx.hilt:hilt-navigation-compose:1.2.0"
 
-    // ✅ Networking
-    // ✅ Networking & Logging
-implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
-implementation 'com.squareup.retrofit2:converter-scalars:2.11.0'
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
-    implementation 'com.squareup.retrofit2:converter-moshi:2.11.0'
-    implementation 'com.squareup.moshi:moshi:1.15.1'
-    implementation 'com.squareup.moshi:moshi-kotlin:1.15.1'
-    kapt 'com.squareup.moshi:moshi-kotlin-codegen:1.15.1' // ✅ Required
+    // 🌐 Networking & Serialization
+    implementation "com.squareup.okhttp3:okhttp:4.12.0"
+    implementation "com.squareup.okhttp3:logging-interceptor:4.12.0"
+    implementation "com.squareup.retrofit2:retrofit:2.11.0"
+    implementation "com.squareup.retrofit2:converter-moshi:2.11.0"
+    implementation "com.squareup.retrofit2:converter-scalars:2.11.0"
 
-    // ✅ Security
-    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+    // 🧩 Moshi JSON
+    implementation "com.squareup.moshi:moshi:1.15.1"
+    implementation "com.squareup.moshi:moshi-kotlin:1.15.1"
+    kapt "com.squareup.moshi:moshi-kotlin-codegen:1.15.1"
+
+    // 🔒 Encrypted SharedPreferences
+    implementation "androidx.security:security-crypto:1.1.0-alpha06"
+
+    // ⚙️ Coroutines
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
 }
