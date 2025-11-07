@@ -21,7 +21,12 @@ fun DashboardScreen(navController: NavHostController) {
     var isLoading by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        accessToken = repo.getAccessToken() ?: "No Token Found"
+        val storedToken = repo.getAccessToken()
+accessToken = if (storedToken.isNullOrEmpty()) {
+    "No Token Found"
+} else {
+    storedToken.take(30) + "..."
+}
         clientCode = repo.getClientCode() ?: "Unknown"
         quoteText = "Fetching NIFTY quote..."
         isLoading = true

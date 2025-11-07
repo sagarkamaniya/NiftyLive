@@ -69,10 +69,17 @@ class NiftyRepository(
 
     /** Save tokens to SecurePrefs */
     fun saveTokens(loginData: LoginResponse?) {
-        loginData?.data?.jwtToken?.let { prefs.saveString(KEY_ACCESS, it) }
-        loginData?.data?.refreshToken?.let { prefs.saveString(KEY_REFRESH, it) }
-        loginData?.data?.feedToken?.let { prefs.saveString(KEY_FEED, it) }
-    }
+    val jwt = loginData?.data?.jwtToken
+    val refresh = loginData?.data?.refreshToken
+    val feed = loginData?.data?.feedToken
+
+    jwt?.let { prefs.saveString(KEY_ACCESS, it) }
+    refresh?.let { prefs.saveString(KEY_REFRESH, it) }
+    feed?.let { prefs.saveString(KEY_FEED, it) }
+
+    // Debug print
+    android.util.Log.d("SmartAPI", "Tokens saved: jwt=$jwt, feed=$feed")
+}
 
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
     fun getFeedToken(): String? = prefs.getString(KEY_FEED)
