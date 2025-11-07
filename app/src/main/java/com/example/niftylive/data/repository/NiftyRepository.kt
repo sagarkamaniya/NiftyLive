@@ -23,8 +23,7 @@ class NiftyRepository(
     }
 
     /**
-     * Logs in to SmartAPI using client credentials and TOTP (authCode).
-     * Automatically stores tokens if successful.
+     * Logs in to SmartAPI and prints full raw server response
      */
     suspend fun loginWithCredentials(
         clientCode: String,
@@ -38,52 +37,52 @@ class NiftyRepository(
             "totp" to authCode
         )
 
+        Log.d("SmartAPI_REQ", "→ Sending login for $clientCode with key=$apiKey")
+
         val rawResponse = api.login(apiKey, body)
-        if (rawResponse.isSuccessful && rawResponse.body() != null) {
-            saveTokens(rawResponse.body())
-            saveCredentials(clientCode, apiKey)
-            return rawResponse
+
+        val rawBody = try {
+            rawResponse.errorBody()?.string()
+                ?: rawResponse.body().toString()
+        } catch (e: Exception) {
+            "Unable to read body: ${e.localizedMessage}"
         }
 
-        val rawText = rawResponse.errorBody()?.string()
-            ?: rawResponse.body()?.toString()
-            ?: "Empty or malformed response from SmartAPI"
+        Log.d("SmartAPI_RES_CODE", "HTTP ${rawResponse.code()}")
+        Log.d("SmartAPI_RES_RAW", rawBody)
 
-        Log.e("SmartAPI_RAW", rawText)
-
+        // Try parse JSON if successful
         return try {
             val moshi = Moshi.Builder().build()
             val adapter = moshi.adapter(LoginResponse::class.java).lenient()
-            val parsed = adapter.fromJson(rawText)
+            val parsed = adapter.fromJson(rawBody)
             if (parsed != null) {
-                saveTokens(parsed)
+                Log.d("SmartAPI_PARSED", parsed.toString())
                 Response.success(parsed)
             } else {
-                Response.error(500, ResponseBody.create(null, rawText))
+                Log.e("SmartAPI_PARSE", "JSON parsing failed")
+                Response.error(500, ResponseBody.create(null, rawBody))
             }
         } catch (e: Exception) {
-            Log.e("SmartAPI_PARSE", "Invalid JSON: ${e.localizedMessage}")
-            Response.error(500, ResponseBody.create(null, "Invalid response: $rawText"))
+            Log.e("SmartAPI_ERR", "JSON parse error: ${e.localizedMessage}")
+            Response.error(500, ResponseBody.create(null, "Invalid response: $rawBody"))
         }
     }
 
-    /** Save tokens to SecurePrefs */
     fun saveTokens(loginData: LoginResponse?) {
-    val jwt = loginData?.data?.jwtToken
-    val refresh = loginData?.data?.refreshToken
-    val feed = loginData?.data?.feedToken
+        val jwt = loginData?.data?.jwtToken
+        val refresh = loginData?.data?.refreshToken
+        val feed = loginData?.data?.feedToken
 
-    jwt?.let { prefs.saveString(KEY_ACCESS, it) }
-    refresh?.let { prefs.saveString(KEY_REFRESH, it) }
-    feed?.let { prefs.saveString(KEY_FEED, it) }
+        Log.d("SmartAPI_TOKEN", "jwt=$jwt refresh=$refresh feed=$feed")
 
-    // Debug print
-    android.util.Log.d("SmartAPI", "Tokens saved: jwt=$jwt, feed=$feed")
-}
+        jwt?.let { prefs.saveString(KEY_ACCESS, it) }
+        refresh?.let { prefs.saveString(KEY_REFRESH, it) }
+        feed?.let { prefs.saveString(KEY_FEED, it) }
+    }
 
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
     fun getFeedToken(): String? = prefs.getString(KEY_FEED)
-
     fun saveCredentials(clientCode: String, apiKey: String) {
         prefs.saveString(KEY_CLIENT, clientCode)
         prefs.saveString(KEY_APIKEY, apiKey)
@@ -92,7 +91,6 @@ class NiftyRepository(
     fun getClientCode(): String? = prefs.getString(KEY_CLIENT)
     fun getApiKey(): String? = prefs.getString(KEY_APIKEY)
 
-    /** Fetch live quote for NIFTY or any instrument token */
     suspend fun getQuoteForToken(token: String): InstrumentQuote? {
         val access = getAccessToken() ?: return null
         val apiKey = getApiKey() ?: return null
@@ -106,6 +104,8 @@ class NiftyRepository(
         val resp: Response<QuoteResponse> = api.getQuote(bearer, apiKey, body)
         if (resp.isSuccessful) {
             return resp.body()?.data?.values?.firstOrNull()
+        } else {
+            Log.e("SmartAPI_QUOTE_ERR", "Failed to fetch quote: ${resp.code()} ${resp.errorBody()?.string()}")
         }
         return null
     }
