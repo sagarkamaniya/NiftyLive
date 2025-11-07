@@ -37,7 +37,7 @@ class AuthViewModel : ViewModel() {
                     repo.saveTokens(response.body())
                     repo.saveCredentials(clientCode, apiKey)
 
-                    val token = response.body()?.data?.access_token ?: ""
+                    val token = response.body()?.data?.jwtToken ?: ""
                     _state.value = AuthState.Success(token)
                 } else {
                     val msg = response.errorBody()?.string() ?: "Login failed: ${response.code()}"
