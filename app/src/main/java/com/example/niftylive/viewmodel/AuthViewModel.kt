@@ -6,59 +6,58 @@ import com.example.niftylive.data.repository.NiftyRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import retrofit2.Response
+import com.example.niftylive.data.model.LoginResponse
 
 sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
-    data class Success(val token: String) : AuthState()
+    data class Success(val message: String) : AuthState()
     data class Error(val message: String) : AuthState()
 }
 
 class AuthViewModel(
-    private val repo: NiftyRepository // if using Hilt, annotate constructor and provide repo
+    private val repository: NiftyRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<AuthState>(AuthState.Idle)
-    val state: StateFlow<AuthState> = _state
+    private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
+    val authState: StateFlow<AuthState> = _authState
 
-    /**
-     * Validates inputs before calling repository.
-     * Returns immediately with an Error state if required fields are missing.
-     *
-     * clientCode/password/apiKey/totp must be non-empty.
-     */
     fun login(clientCode: String, password: String, apiKey: String, totp: String) {
+        // Input validation
         if (clientCode.isBlank() || password.isBlank() || apiKey.isBlank() || totp.isBlank()) {
-            _state.value = AuthState.Error("Please fill all fields")
+            _authState.value = AuthState.Error("All fields are required")
             return
         }
 
         viewModelScope.launch {
-            _state.value = AuthState.Loading
             try {
-                val resp = repo.loginWithCredentials(clientCode, password, apiKey, totp)
-                if (resp.isSuccessful) {
-                    val body = resp.body()
-                    // adapt to your model's field names; many SmartAPI variants use jwtToken or access_token
-                    val token = body?.data?.access_token ?: body?.data?.jwtToken ?: ""
-                    if (!token.isNullOrBlank()) {
-                        repo.saveTokens(body)
-                        repo.saveCredentials(clientCode, apiKey)
-                        _state.value = AuthState.Success(token)
-                    } else {
-                        _state.value = AuthState.Error("Login succeeded but no token found")
-                    }
+                _authState.value = AuthState.Loading
+
+                val response: Response<LoginResponse> = repository.loginWithCredentials(
+                    clientCode = clientCode,
+                    password = password,
+                    apiKey = apiKey,
+                    authCode = totp
+                )
+
+                val body = response.body()
+
+                if (response.isSuccessful && body?.data?.access_token != null) {
+                    repository.saveTokens(body)
+                    repository.saveCredentials(clientCode, apiKey)
+                    _authState.value = AuthState.Success("Login successful")
                 } else {
-                    val msg = resp.errorBody()?.string() ?: "Login failed: ${resp.code()}"
-                    _state.value = AuthState.Error(msg)
+                    _authState.value = AuthState.Error("Login failed: Invalid response")
                 }
+
             } catch (e: Exception) {
-                _state.value = AuthState.Error(e.localizedMessage ?: "Network error")
+                _authState.value = AuthState.Error("Error: ${e.localizedMessage ?: "Unknown"}")
             }
         }
     }
 
-    fun reset() {
-        _state.value = AuthState.Idle
+    fun resetState() {
+        _authState.value = AuthState.Idle
     }
 }

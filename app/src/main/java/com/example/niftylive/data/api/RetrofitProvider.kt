@@ -1,28 +1,32 @@
 package com.example.niftylive.data.api
 
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 
-class RetrofitProvider(
-    baseUrl: String = "https://apiconnect.angelone.in/" // change if needed
-) {
+object RetrofitProvider {
+
+    private const val BASE_URL = "https://apiconnect.angelbroking.com/"
+
     private val logging = HttpLoggingInterceptor().apply {
-        setLevel(HttpLoggingInterceptor.Level.BODY)
+        level = HttpLoggingInterceptor.Level.BODY
     }
 
     private val client = OkHttpClient.Builder()
         .addInterceptor(logging)
         .build()
 
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(baseUrl)
-        .client(client)
-        .addConverterFactory(ScalarsConverterFactory.create()) // for text responses
-        .addConverterFactory(MoshiConverterFactory.create())   // for JSON
-        .build()
+    val retrofit: Retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            // ✅ Scalars first, then Moshi
+            .addConverterFactory(ScalarsConverterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create())
+            .build()
+    }
 
-    val service: SmartApiService = retrofit.create(SmartApiService::class.java)
+    fun createService(): SmartApiService = retrofit.create(SmartApiService::class.java)
 }
