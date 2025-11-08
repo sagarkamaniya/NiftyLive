@@ -1,52 +1,26 @@
 package com.example.niftylive.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.niftylive.viewmodel.DashboardState
 import com.example.niftylive.viewmodel.DashboardViewModel
 
 @Composable
-fun DashboardScreen(
-    viewModel: DashboardViewModel,
-    onLogout: () -> Unit
-) {
-    val state by viewModel.state.collectAsState()
-    val clientCode by viewModel.clientCode.collectAsState()
-    val accessToken by viewModel.accessToken.collectAsState()
-
-    LaunchedEffect(Unit) { viewModel.fetchQuote() }
-
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+fun DashboardScreen(viewModel: DashboardViewModel) {
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Text(" Dashboard", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Client Code: $clientCode")
-            Text("Access Token: ${accessToken.take(10)}...")
-
-            Spacer(modifier = Modifier.height(16.dp))
-            when (state) {
-                is DashboardState.Loading -> Text("Fetching quote...")
-                is DashboardState.Success -> {
-                    val quote = (state as DashboardState.Success).quote
-                    Text("Token: ${quote.token}")
-                    Text("Last Price: ${quote.last_traded_price}")
-                }
-                is DashboardState.Error -> Text((state as DashboardState.Error).message)
-                else -> Text("Idle")
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = onLogout) { Text("Logout") }
+            Text(
+                text = "Welcome to NiftyLive 📊",
+                style = MaterialTheme.typography.headlineMedium
+            )
         }
     }
 }

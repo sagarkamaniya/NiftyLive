@@ -3,19 +3,43 @@ package com.example.niftylive
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.Text
-import androidx.compose.material3.Surface
+import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.navigation.compose.rememberNavController
+import com.example.niftylive.ui.navigation.NavGraph
+import com.example.niftylive.viewmodel.AuthViewModel
+import com.example.niftylive.viewmodel.DashboardViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val authViewModel: AuthViewModel by viewModels()
+    private val dashboardViewModel: DashboardViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
-            MaterialTheme {
-                Surface {
-                    Text("NiftyLive")
-                }
-            }
+            NiftyLiveApp(authViewModel, dashboardViewModel)
         }
+    }
+}
+
+@Composable
+fun NiftyLiveApp(
+    authViewModel: AuthViewModel,
+    dashboardViewModel: DashboardViewModel
+) {
+    val navController = rememberNavController()
+
+    Surface(color = MaterialTheme.colorScheme.background) {
+        NavGraph(
+            navController = navController,
+            authViewModel = authViewModel,
+            dashboardViewModel = dashboardViewModel
+        )
     }
 }
