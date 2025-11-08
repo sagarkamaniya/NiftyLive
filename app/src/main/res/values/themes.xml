@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Minimal Material 3 theme that inherits from the platform Material3 theme -->
-    <style name="Theme.NiftyLive" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="android:windowBackground">@color/white</item>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ✅ Base theme for Material 3 -->
+    <style name="Theme.NiftyLive" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/md_theme_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
+        <item name="android:statusBarColor">@color/md_theme_primary</item>
+        <item name="android:navigationBarColor">@color/md_theme_primary</item>
     </style>
+
 </resources>
