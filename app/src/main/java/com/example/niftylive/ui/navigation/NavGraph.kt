@@ -4,16 +4,16 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.niftylive.ui.screens.LoginScreen
 import com.example.niftylive.ui.screens.DashboardScreen
-import com.example.niftylive.ui.screens.SettingsScreen // <-- 1. ADD THIS IMPORT
+import com.example.niftylive.ui.screens.LoginScreen
+import com.example.niftylive.ui.screens.SettingsScreen
 import com.example.niftylive.viewmodel.AuthViewModel
 import com.example.niftylive.viewmodel.DashboardViewModel
 
 object Routes {
     const val LOGIN = "login"
     const val DASHBOARD = "dashboard"
-    const val SETTINGS = "settings" // <-- 2. ADD THIS NEW ROUTE
+    const val SETTINGS = "settings"
 }
 
 @Composable
@@ -24,7 +24,8 @@ fun NavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Routes.LOGIN
+        // ✅ Sets the "Settings" screen as the first screen
+        startDestination = Routes.SETTINGS
     ) {
         composable(Routes.LOGIN) {
             LoginScreen(
@@ -34,8 +35,8 @@ fun NavGraph(
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
                 },
-                // ✅ 3. ADD THIS NAVIGATION TO THE LOGIN SCREEN
                 onGoToSettings = {
+                    // This lets you go from Login *back* to Settings
                     navController.navigate(Routes.SETTINGS)
                 }
             )
@@ -45,18 +46,16 @@ fun NavGraph(
             DashboardScreen(viewModel = dashboardViewModel)
         }
 
-        // ✅ 4. ADD THIS ENTIRE NEW BLOCK FOR THE SETTINGS SCREEN
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 viewModel = authViewModel,
+                // ✅ This is the updated navigation logic
                 onSettingsSaved = {
-                    // When saved, just go back to the previous screen (Login)
+                    // Go to the Login screen
                     navController.navigate(Routes.LOGIN) {
-                        // This removes the SettingsScreen from the back stack,
-                        // so you can't go "back" to it from the LoginScreen.
+                        // Remove the Settings screen from history
                         popUpTo(Routes.SETTINGS) { inclusive = true }
                     }
-
                 }
             )
         }

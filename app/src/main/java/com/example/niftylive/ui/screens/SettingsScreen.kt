@@ -16,9 +16,8 @@ import com.example.niftylive.viewmodel.AuthViewModel
 @Composable
 fun SettingsScreen(
     viewModel: AuthViewModel = viewModel(),
-    onSettingsSaved: () -> Unit // Function to call when settings are saved
+    onSettingsSaved: () -> Unit // This comes from the NavGraph
 ) {
-    // We use 'var' here to hold the text field state
     var clientCode by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") } // Your MPIN
     var apiKey by remember { mutableStateOf("") }
@@ -26,7 +25,6 @@ fun SettingsScreen(
     var publicIp by remember { mutableStateOf("") }
     var macAddress by remember { mutableStateOf("") }
 
-    // State for showing a "Saved!" message
     var saveMessage by remember { mutableStateOf<String?>(null) }
 
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -34,7 +32,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp)
-                .verticalScroll(rememberScrollState()), // Makes the column scrollable
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -90,7 +88,7 @@ fun SettingsScreen(
 
             Button(
                 onClick = {
-                    // Call the ViewModel function to save the data
+                    // 1. Save the data
                     viewModel.saveStaticCredentials(
                         clientCode = clientCode,
                         password = password,
@@ -99,8 +97,11 @@ fun SettingsScreen(
                         publicIp = publicIp,
                         macAddress = macAddress
                     )
-                    // Show a message and navigate back
+                    
+                    // 2. Show a message
                     saveMessage = "Credentials Saved!"
+                    
+                    // 3. ✅ This is the line that triggers navigation
                     onSettingsSaved()
                 },
                 modifier = Modifier.fillMaxWidth()
