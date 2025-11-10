@@ -34,6 +34,6 @@ data class InstrumentQuote(
     @Json(name = "last_traded_price") val last_traded_price: Double? = null,
     @Json(name = "close_price") val close_price: Double? = null,
     @Json(name = "change") val change: Double? = null,
-    @Json(name =AN = "percent_change") val percent_change: Double? = null,
+    @Json(name  = "percent_change") val percent_change: Double? = null,
     @Json(name = "volume") val volume: Long? = null
 )

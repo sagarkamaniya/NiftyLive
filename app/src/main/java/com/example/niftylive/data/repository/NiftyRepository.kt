@@ -14,7 +14,7 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.Response
 import javax.inject.Inject
 
-@Inject
+
 class NiftyRepository @Inject constructor(
     private val api: SmartApiService,
     private val prefs: SecurePrefs,
