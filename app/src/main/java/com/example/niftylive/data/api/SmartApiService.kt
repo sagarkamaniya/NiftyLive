@@ -10,15 +10,24 @@ import retrofit2.http.POST
 
 interface SmartApiService {
 
-    // ✅ SmartAPI login endpoint
-    @Headers("Content-Type: application/json", "Accept: application/json")
-    @POST("smartapi/v1/login")
+    // ✅ UPDATED LOGIN FUNCTION
+    @Headers(
+        "Content-Type: application/json",
+        "Accept: application/json",
+        "X-UserType: USER",
+        "X-SourceID: WEB" // Note: You may need to change WEB to APP
+    )
+    @POST("/rest/auth/angelbroking/user/v1/loginByPassword") // The new endpoint
     suspend fun login(
-        @Header("X-Api-Key") apiKey: String,
+        @Header("X-PrivateKey") apiKey: String, // This is your API Key
+        @Header("X-ClientLocalIP") localIp: String,
+        @Header("X-ClientPublicIP") publicIp: String,
+        @Header("X-MACAddress") macAddress: String,
         @Body body: Map<String, String>
     ): Response<LoginResponse>
 
-    // ✅ Quote endpoint
+    // ✅ TODO: You will need to update this quote endpoint as well.
+    // It is probably wrong.
     @Headers("Content-Type: application/json", "Accept: application/json")
     @POST("smartapi/v1/quote")
     suspend fun getQuote(

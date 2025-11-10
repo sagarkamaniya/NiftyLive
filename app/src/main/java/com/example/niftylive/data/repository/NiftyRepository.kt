@@ -6,17 +6,19 @@ import com.example.niftylive.data.model.InstrumentQuote
 import com.example.niftylive.data.model.LoginResponse
 import com.example.niftylive.data.model.QuoteResponse
 import com.example.niftylive.utils.SecurePrefs
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody
+import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.Response
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.JsonAdapter
-import javax.inject.Inject // <-- 1. ADD THIS IMPORT
+import javax.inject.Inject
 
-class NiftyRepository @Inject constructor( // <-- 2. ADD @Inject
+@Inject
+class NiftyRepository @Inject constructor(
     private val api: SmartApiService,
     private val prefs: SecurePrefs,
-    private val moshi: Moshi // <-- 3. INJECT MOSHI
+    private val moshi: Moshi
 ) {
 
     companion object {
@@ -25,26 +27,42 @@ class NiftyRepository @Inject constructor( // <-- 2. ADD @Inject
         const val KEY_FEED = "feed_token"
         const val KEY_CLIENT = "client_code"
         const val KEY_APIKEY = "api_key"
+
+        // ✅ ADDED NEW KEYS
+        const val KEY_PASSWORD = "password" // This will be your MPIN
+        const val KEY_LOCAL_IP = "local_ip"
+        const val KEY_PUBLIC_IP = "public_ip"
+        const val KEY_MAC_ADDRESS = "mac_address"
     }
 
     /**
      * Login with SmartAPI credentials.
-     * Handles malformed JSON, plain text, or null responses gracefully.
+     * ✅ UPDATED
      */
     suspend fun loginWithCredentials(
         clientCode: String,
-        password: String,
+        password: String, // This is your MPIN
         apiKey: String,
-        authCode: String
+        authCode: String, // This is your TOTP
+        localIp: String,
+        publicIp: String,
+        macAddress: String
     ): Response<LoginResponse> {
+
         val body = mapOf(
             "clientcode" to clientCode,
-            "password" to password,
+            "password" to password, // "password" key maps to your PIN
             "totp" to authCode
         )
 
         return try {
-            val response = api.login(apiKey, body)
+            val response = api.login(
+                apiKey = apiKey,
+                localIp = localIp,
+                publicIp = publicIp,
+                macAddress = macAddress,
+                body = body
+            )
 
             if (response.isSuccessful) {
                 val responseBody = response.body()
@@ -54,13 +72,11 @@ class NiftyRepository @Inject constructor( // <-- 2. ADD @Inject
                 }
             }
 
-            // Handle raw or malformed responses
             val errorText = response.errorBody()?.string()
                 ?: "Empty or malformed SmartAPI response"
 
             Log.e("SmartAPI_LOGIN_RAW", "Response: $errorText")
 
-            // 4. USE THE INJECTED MOSHI INSTANCE (REMOVED .Builder())
             val adapter: JsonAdapter<LoginResponse> =
                 moshi.adapter(LoginResponse::class.java).lenient()
 
@@ -72,7 +88,7 @@ class NiftyRepository @Inject constructor( // <-- 2. ADD @Inject
                 Log.e("SmartAPI_LOGIN_PARSE", "❌ Could not parse response")
                 Response.error(
                     500,
-                    ResponseBody.create("text/plain".toMediaType(), "Invalid or empty response: $errorText")
+                    "Invalid or empty response: $errorText".toResponseBody("text/plain".toMediaType())
                 )
             }
 
@@ -80,28 +96,47 @@ class NiftyRepository @Inject constructor( // <-- 2. ADD @Inject
             Log.e("SmartAPI_LOGIN_ERR", "❌ Exception during login: ${e.localizedMessage}")
             Response.error(
                 500,
-                ResponseBody.create("text/plain".toMediaType(), "Exception: ${e.localizedMessage}")
+                "Exception: ${e.localizedMessage}".toResponseBody("text/plain".toMediaType())
             )
         }
     }
 
     /** Save tokens securely */
     fun saveTokens(loginData: LoginResponse?) {
-        loginData?.data?.access_token?.let { prefs.saveString(KEY_ACCESS, it) }
-        loginData?.data?.refresh_token?.let { prefs.saveString(KEY_REFRESH, it) }
-        loginData?.data?.feed_token?.let { prefs.saveString(KEY_FEED, it) }
+        // ✅ UPDATED based on new LoginResponse model
+        loginData?.data?.jwtToken?.let { prefs.saveString(KEY_ACCESS, it) }
+        loginData?.data?.refreshToken?.let { prefs.saveString(KEY_REFRESH, it) }
+        loginData?.data?.feedToken?.let { prefs.saveString(KEY_FEED, it) }
     }
 
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
     fun getFeedToken(): String? = prefs.getString(KEY_FEED)
 
-    fun saveCredentials(clientCode: String, apiKey: String) {
+    // ✅ UPDATED to save all static data
+    fun saveCredentials(
+        clientCode: String,
+        password: String, // Your MPIN
+        apiKey: String,
+        localIp: String,
+        publicIp: String,
+        macAddress: String
+    ) {
         prefs.saveString(KEY_CLIENT, clientCode)
+        prefs.saveString(KEY_PASSWORD, password)
         prefs.saveString(KEY_APIKEY, apiKey)
+        prefs.saveString(KEY_LOCAL_IP, localIp)
+        prefs.saveString(KEY_PUBLIC_IP, publicIp)
+        prefs.saveString(KEY_MAC_ADDRESS, macAddress)
     }
 
+    // ✅ ADDED NEW GETTERS
     fun getClientCode(): String? = prefs.getString(KEY_CLIENT)
     fun getApiKey(): String? = prefs.getString(KEY_APIKEY)
+    fun getPassword(): String? = prefs.getString(KEY_PASSWORD)
+    fun getLocalIp(): String? = prefs.getString(KEY_LOCAL_IP)
+    fun getPublicIp(): String? = prefs.getString(KEY_PUBLIC_IP)
+    fun getMacAddress(): String? = prefs.getString(KEY_MAC_ADDRESS)
+
 
     /** Fetch live quote for an instrument token */
     suspend fun getQuoteForToken(token: String): InstrumentQuote? {
@@ -113,8 +148,11 @@ class NiftyRepository @Inject constructor( // <-- 2. ADD @Inject
             "mode" to "FULL",
             "exchangeTokens" to mapOf("NSE" to listOf(token))
         )
-
+        
+        // ✅ TODO: This will fail. You must update this API call
+        // based on the new API documentation.
         val resp: Response<QuoteResponse> = api.getQuote(bearer, apiKey, body)
+        
         if (resp.isSuccessful) {
             return resp.body()?.data?.values?.firstOrNull()
         }

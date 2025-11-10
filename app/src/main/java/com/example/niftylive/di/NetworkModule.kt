@@ -18,7 +18,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    // 1. Teach Hilt how to make the logging interceptor
     @Provides
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
@@ -27,17 +26,14 @@ object NetworkModule {
         }
     }
 
-    // 2. Teach Hilt how to make the OkHttpClient
     @Provides
     @Singleton
     fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
         return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor) // Add the logger
+            .addInterceptor(loggingInterceptor)
             .build()
-        // Hilt now knows how to provide this to OkHttpWsClient
     }
 
-    // 3. Teach Hilt how to make Moshi (for JSON parsing)
     @Provides
     @Singleton
     fun provideMoshi(): Moshi {
@@ -46,23 +42,20 @@ object NetworkModule {
             .build()
     }
 
-    // 4. Teach Hilt how to make Retrofit
     @Provides
     @Singleton
     fun provideRetrofit(client: OkHttpClient, moshi: Moshi): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://apiconnect.angelbroking.com/")
-            .client(client) // Use the client from step 2
+            .baseUrl("https://apiconnect.angelone.in/") // ✅ New API Base URL
+            .client(client)
             .addConverterFactory(ScalarsConverterFactory.create())
-            .addConverterFactory(MoshiConverterFactory.create(moshi)) // Use the Moshi from step 3
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
     }
 
-    // 5. Teach Hilt how to make your SmartApiService
     @Provides
     @Singleton
     fun provideSmartApiService(retrofit: Retrofit): SmartApiService {
         return retrofit.create(SmartApiService::class.java)
-        // Now Hilt can inject this into your NiftyRepository!
     }
 }

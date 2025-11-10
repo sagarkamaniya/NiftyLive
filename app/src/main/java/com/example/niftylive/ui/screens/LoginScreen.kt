@@ -19,9 +19,6 @@ fun LoginScreen(
 ) {
     val state = viewModel.authState.collectAsState().value
 
-    var clientCode by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var apiKey by remember { mutableStateOf("") }
     var totp by remember { mutableStateOf("") }
 
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -37,28 +34,6 @@ fun LoginScreen(
             Spacer(Modifier.height(24.dp))
 
             OutlinedTextField(
-                value = clientCode,
-                onValueChange = { clientCode = it },
-                label = { Text("Client Code") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = apiKey,
-                onValueChange = { apiKey = it },
-                label = { Text("API Key") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
                 value = totp,
                 onValueChange = { totp = it },
                 label = { Text("TOTP (2FA)") },
@@ -68,7 +43,7 @@ fun LoginScreen(
             Spacer(Modifier.height(16.dp))
 
             Button(
-                onClick = { viewModel.login(clientCode, password, apiKey, totp) },
+                onClick = { viewModel.login(totp) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Login")
@@ -80,7 +55,9 @@ fun LoginScreen(
                 is AuthState.Loading -> CircularProgressIndicator()
                 is AuthState.Success -> {
                     Text(state.message, color = MaterialTheme.colorScheme.primary)
-                    onLoginSuccess()
+                    LaunchedEffect(Unit) {
+                        onLoginSuccess()
+                    }
                 }
                 is AuthState.Error -> Text(state.message, color = MaterialTheme.colorScheme.error)
                 AuthState.Idle -> {}
