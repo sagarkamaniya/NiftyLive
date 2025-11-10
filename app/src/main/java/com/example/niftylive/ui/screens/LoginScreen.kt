@@ -5,7 +5,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.niftylive.viewmodel.AuthState
@@ -15,7 +14,8 @@ import com.example.niftylive.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel = viewModel(),
-    onLoginSuccess: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {},
+    onGoToSettings: () -> Unit = {} // <-- 1. ADD THIS PARAMETER
 ) {
     val state = viewModel.authState.collectAsState().value
 
@@ -29,38 +29,15 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("SmartAPI Login", style = MaterialTheme.typography.headlineMedium)
+            // ... (Title, TOTP field, Login Button, State messages) ...
+            
+            // ... (Your 'when (state)' block) ...
+            
+            Spacer(Modifier.height(32.dp)) // Add some space
 
-            Spacer(Modifier.height(24.dp))
-
-            OutlinedTextField(
-                value = totp,
-                onValueChange = { totp = it },
-                label = { Text("TOTP (2FA)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            Button(
-                onClick = { viewModel.login(totp) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Login")
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            when (state) {
-                is AuthState.Loading -> CircularProgressIndicator()
-                is AuthState.Success -> {
-                    Text(state.message, color = MaterialTheme.colorScheme.primary)
-                    LaunchedEffect(Unit) {
-                        onLoginSuccess()
-                    }
-                }
-                is AuthState.Error -> Text(state.message, color = MaterialTheme.colorScheme.error)
-                AuthState.Idle -> {}
+            // ✅ 2. ADD THIS "SETTINGS" BUTTON
+            TextButton(onClick = onGoToSettings) {
+                Text("Setup Credentials (Settings)")
             }
         }
     }
