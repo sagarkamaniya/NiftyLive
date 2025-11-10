@@ -15,10 +15,12 @@ import com.example.niftylive.viewmodel.AuthViewModel
 fun LoginScreen(
     viewModel: AuthViewModel = viewModel(),
     onLoginSuccess: () -> Unit = {},
-    onGoToSettings: () -> Unit = {} // <-- 1. ADD THIS PARAMETER
+    onGoToSettings: () -> Unit = {}
 ) {
+    // This variable IS USED by the OutlinedTextField
     val state = viewModel.authState.collectAsState().value
 
+    // This variable IS USED by the OutlinedTextField
     var totp by remember { mutableStateOf("") }
 
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -29,13 +31,47 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // ... (Title, TOTP field, Login Button, State messages) ...
-            
-            // ... (Your 'when (state)' block) ...
-            
-            Spacer(Modifier.height(32.dp)) // Add some space
+            Text("SmartAPI Login", style = MaterialTheme.typography.headlineMedium)
 
-            // ✅ 2. ADD THIS "SETTINGS" BUTTON
+            Spacer(Modifier.height(24.dp))
+
+            // ✅ THIS IS THE TOTP FIELD
+            OutlinedTextField(
+                value = totp,
+                onValueChange = { totp = it },
+                label = { Text("TOTP (2FA)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            // ✅ THIS IS THE LOGIN BUTTON
+            Button(
+                onClick = { viewModel.login(totp) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Login")
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // ✅ THIS 'when' BLOCK USES THE 'state' VARIABLE
+            when (state) {
+                is AuthState.Loading -> CircularProgressIndicator()
+                is AuthState.Success -> {
+                    Text(state.message, color = MaterialTheme.colorScheme.primary)
+                    // This uses the 'onLoginSuccess' parameter
+                    LaunchedEffect(Unit) {
+                        onLoginSuccess()
+                    }
+                }
+                is AuthState.Error -> Text(state.message, color = MaterialTheme.colorScheme.error)
+                AuthState.Idle -> {}
+            }
+
+            Spacer(Modifier.height(32.dp))
+
+            // ✅ THIS IS THE SETTINGS BUTTON
             TextButton(onClick = onGoToSettings) {
                 Text("Setup Credentials (Settings)")
             }
