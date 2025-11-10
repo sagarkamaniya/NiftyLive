@@ -1,50 +1,47 @@
-package com.example.app.network
+package com.example.niftylive.data.api
 
-import com.example.app.models.NiftyDataModel
-import com.example.app.models.StockQuote
+import com.example.niftylive.data.model.LoginResponse
+import com.example.niftylive.data.model.QuoteResponse
 import retrofit2.Response
-import retrofit2.http.GET
+import retrofit2.http.Body
 import retrofit2.http.Header
-import retrofit2.http.Path
-import retrofit2.http.Query
+import retrofit2.http.Headers
+import retrofit2.http.POST
 
-/**
- * Interface for the SmartApiService, defining all network API endpoints.
- * This is used by Retrofit to create a network client.
- */
 interface SmartApiService {
 
-    /**
-     * Fetches the main Nifty index data.
-     * Example: GET /api/v1/market/nifty50
-     */
-    @GET("api/v1/market/nifty50")
-    suspend fun getNiftyIndex(
-        @Header("Authorization") token: String
-    ): Response<NiftyDataModel>
+    // Your login function (this one is correct)
+    @Headers(
+        "Content-Type: application/json",
+        "Accept: application/json",
+        "X-UserType: USER",
+        "X-SourceID: WEB"
+    )
+    @POST("/rest/auth/angelbroking/user/v1/loginByPassword")
+    suspend fun login(
+        @Header("X-PrivateKey") apiKey: String,
+        @Header("X-ClientLocalIP") localIp: String,
+        @Header("X-ClientPublicIP") publicIp: String,
+        @Header("X-MACAddress") macAddress: String,
+        @Body body: Map<String, String>
+    ): Response<LoginResponse>
 
-    /**
-     * Fetches a specific stock's quote using a symbol in the URL path.
-     * Example: GET /api/v1/stocks/RELIANCE
-     */
-    @GET("api/v1/stocks/{symbol}")
-    suspend fun getStockQuote(
-        @Header("Authorization") token: String,
-        @Path("symbol") stockSymbol: String
-    ): Response<StockQuote>
-
-    /**
-     * Searches for stocks using a query parameter.
-     * Example: GET /api/v1/search?q=tata
-     */
-    @GET("api/v1/search")
-    suspend fun searchStocks(
-        @Header("Authorization") token: String,
-        @Query("q") searchQuery: String
-    ): Response<List<StockQuote>>
-
-    // You could add other endpoints like for user portfolios, orders, etc.
-    //
-    // @POST("api/v1/order")
-    // suspend fun placeOrder(@Body orderRequest: OrderRequest): Response<OrderResponse>
+    
+    // ✅ REPLACED THE OLD getQuote FUNCTION WITH THIS
+    @Headers(
+        "Accept: application/json",
+        "X-UserType: USER",
+        "X-SourceID: WEB",
+        "Content-Type: application/json"
+    )
+    @POST("/rest/secure/angelbroking/market/v1/quote/") // New Endpoint
+    suspend fun getQuote(
+        @Header("Authorization") auth: String, // Bearer token
+        @Header("X-PrivateKey") apiKey: String,
+        @Header("X-ClientLocalIP") localIp: String,
+        @Header("X-ClientPublicIP") publicIp: String,
+        @Header("X-MACAddress") macAddress: String,
+        
+        @Body body: Map<String, Any> // The new request body
+    ): Response<QuoteResponse>
 }
