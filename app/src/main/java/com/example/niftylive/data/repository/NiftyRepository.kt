@@ -9,11 +9,9 @@ import com.example.niftylive.utils.SecurePrefs
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.Response
 import javax.inject.Inject
-
 
 class NiftyRepository @Inject constructor(
     private val api: SmartApiService,
@@ -27,8 +25,6 @@ class NiftyRepository @Inject constructor(
         const val KEY_FEED = "feed_token"
         const val KEY_CLIENT = "client_code"
         const val KEY_APIKEY = "api_key"
-
-        // ✅ ADDED NEW KEYS
         const val KEY_PASSWORD = "password" // This will be your MPIN
         const val KEY_LOCAL_IP = "local_ip"
         const val KEY_PUBLIC_IP = "public_ip"
@@ -37,7 +33,6 @@ class NiftyRepository @Inject constructor(
 
     /**
      * Login with SmartAPI credentials.
-     * ✅ UPDATED
      */
     suspend fun loginWithCredentials(
         clientCode: String,
@@ -72,6 +67,7 @@ class NiftyRepository @Inject constructor(
                 }
             }
 
+            // Handle raw or malformed responses
             val errorText = response.errorBody()?.string()
                 ?: "Empty or malformed SmartAPI response"
 
@@ -103,7 +99,6 @@ class NiftyRepository @Inject constructor(
 
     /** Save tokens securely */
     fun saveTokens(loginData: LoginResponse?) {
-        // ✅ UPDATED based on new LoginResponse model
         loginData?.data?.jwtToken?.let { prefs.saveString(KEY_ACCESS, it) }
         loginData?.data?.refreshToken?.let { prefs.saveString(KEY_REFRESH, it) }
         loginData?.data?.feedToken?.let { prefs.saveString(KEY_FEED, it) }
@@ -112,7 +107,7 @@ class NiftyRepository @Inject constructor(
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
     fun getFeedToken(): String? = prefs.getString(KEY_FEED)
 
-    // ✅ UPDATED to save all static data
+    /** Save all static credentials */
     fun saveCredentials(
         clientCode: String,
         password: String, // Your MPIN
@@ -129,7 +124,7 @@ class NiftyRepository @Inject constructor(
         prefs.saveString(KEY_MAC_ADDRESS, macAddress)
     }
 
-    // ✅ ADDED NEW GETTERS
+    // Getters for all saved credentials
     fun getClientCode(): String? = prefs.getString(KEY_CLIENT)
     fun getApiKey(): String? = prefs.getString(KEY_APIKEY)
     fun getPassword(): String? = prefs.getString(KEY_PASSWORD)
@@ -140,23 +135,45 @@ class NiftyRepository @Inject constructor(
 
     /** Fetch live quote for an instrument token */
     suspend fun getQuoteForToken(token: String): InstrumentQuote? {
+        // 1. Get all the required credentials
         val access = getAccessToken() ?: return null
         val apiKey = getApiKey() ?: return null
+        val localIp = getLocalIp() ?: return null
+        val publicIp = getPublicIp() ?: return null
+        val macAddress = getMacAddress() ?: return null
+
         val bearer = "Bearer $access"
 
+        // 2. Create the new request body from the documentation
         val body = mapOf(
             "mode" to "FULL",
-            "exchangeTokens" to mapOf("NSE" to listOf(token))
+            "exchangeTokens" to mapOf(
+                "NSE" to listOf(token) // Use the "26000" token from your ViewModel
+            )
         )
-        
-        // ✅ TODO: This will fail. You must update this API call
-        // based on the new API documentation.
-        val resp: Response<QuoteResponse> = api.getQuote(bearer, apiKey, body)
-        
-        if (resp.isSuccessful) {
-            return resp.body()?.data?.values?.firstOrNull()
+
+        try {
+            // 3. Call the new API function with all headers
+            val resp: Response<QuoteResponse> = api.getQuote(
+                auth = bearer,
+                apiKey = apiKey,
+                localIp = localIp,
+                publicIp = publicIp,
+                macAddress = macAddress,
+                body = body
+            )
+
+            if (resp.isSuccessful) {
+                // 4. Parse the new response structure
+                return resp.body()?.data?.fetched?.firstOrNull()
+            }
+
+            Log.e("SmartAPI_QUOTE", "Failed: ${resp.errorBody()?.string()}")
+            return null
+
+        } catch (e: Exception) {
+            Log.e("SmartAPI_QUOTE_ERR", "Exception: ${e.localizedMessage}")
+            return null
         }
-        Log.e("SmartAPI_QUOTE", "Failed: ${resp.errorBody()?.string()}")
-        return null
     }
 }

@@ -43,7 +43,7 @@ fun NavGraph(
         }
 
         composable(Routes.DASHBOARD) {
-            DashboardScreen(viewModel = dashboardViewModel)
+            DashboardScreen()
         }
 
         composable(Routes.SETTINGS) {

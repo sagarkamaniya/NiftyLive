@@ -10,29 +10,39 @@ import retrofit2.http.POST
 
 interface SmartApiService {
 
-    // ✅ UPDATED LOGIN FUNCTION
+    // ... (Your login function is here, no changes) ...
     @Headers(
         "Content-Type: application/json",
         "Accept: application/json",
         "X-UserType: USER",
-        "X-SourceID: WEB" // Note: You may need to change WEB to APP
+        "X-SourceID: WEB"
     )
-    @POST("/rest/auth/angelbroking/user/v1/loginByPassword") // The new endpoint
+    @POST("/rest/auth/angelbroking/user/v1/loginByPassword")
     suspend fun login(
-        @Header("X-PrivateKey") apiKey: String, // This is your API Key
+        @Header("X-PrivateKey") apiKey: String,
         @Header("X-ClientLocalIP") localIp: String,
         @Header("X-ClientPublicIP") publicIp: String,
         @Header("X-MACAddress") macAddress: String,
         @Body body: Map<String, String>
     ): Response<LoginResponse>
 
-    // ✅ TODO: You will need to update this quote endpoint as well.
-    // It is probably wrong.
-    @Headers("Content-Type: application/json", "Accept: application/json")
-    @POST("smartapi/v1/quote")
+    
+    // ✅ REPLACED THE OLD getQuote FUNCTION WITH THIS
+    @Headers(
+        "Accept: application/json",
+        "X-UserType: USER",
+        "X-SourceID: WEB",
+        "Content-Type: application/json"
+    )
+    @POST("/rest/secure/angelbroking/market/v1/quote/") // New Endpoint
     suspend fun getQuote(
-        @Header("Authorization") auth: String,
-        @Header("X-Api-Key") apiKey: String,
-        @Body body: Map<String, Any>
+        // These are all the new required headers
+        @Header("Authorization") auth: String, // Bearer token
+        @Header("X-PrivateKey") apiKey: String,
+        @Header("X-ClientLocalIP") localIp: String,
+        @Header("X-ClientPublicIP") publicIp: String,
+        @Header("X-MACAddress") macAddress: String,
+        
+        @Body body: Map<String, Any> // The new request body
     ): Response<QuoteResponse>
 }
