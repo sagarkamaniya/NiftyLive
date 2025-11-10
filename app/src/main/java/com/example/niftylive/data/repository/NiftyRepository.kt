@@ -5,14 +5,16 @@ import com.example.niftylive.data.api.SmartApiService
 import com.example.niftylive.data.model.InstrumentQuote
 import com.example.niftylive.data.model.LoginResponse
 import com.example.niftylive.data.model.QuoteResponse
-import com.example.niftylive.utils.SecurePrefs
+import com.example.niftylive.utils.SecurePrefs // Make sure this file exists
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.Response
 import javax.inject.Inject
+import javax.inject.Singleton // ✅ 1. ADD THIS IMPORT
 
+@Singleton // ✅ 2. ADD THIS ANNOTATION
 class NiftyRepository @Inject constructor(
     private val api: SmartApiService,
     private val prefs: SecurePrefs,

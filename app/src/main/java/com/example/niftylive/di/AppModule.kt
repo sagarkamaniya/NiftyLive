@@ -1,3 +1,4 @@
+
 package com.example.niftylive.di
 
 import android.content.Context
@@ -13,6 +14,14 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    // This tells Hilt how to provide the application context
+    @Provides
+    @Singleton
+    fun provideContext(@ApplicationContext context: Context): Context {
+        return context
+    }
+
+    // This tells Hilt how to build SecurePrefs using the Context
     @Provides
     @Singleton
     fun provideSecurePrefs(@ApplicationContext context: Context): SecurePrefs {
