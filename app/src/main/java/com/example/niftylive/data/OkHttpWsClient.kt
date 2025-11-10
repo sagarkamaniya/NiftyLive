@@ -7,9 +7,13 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import okhttp3.*
 import okio.ByteString
+import javax.inject.Inject // <-- ADDED THIS IMPORT
 
-class OkHttpWsClient {
-    private val client = OkHttpClient.Builder().build()
+class OkHttpWsClient @Inject constructor(
+    private val client: OkHttpClient // <-- CHANGED THIS LINE
+) {
+    // private val client = OkHttpClient.Builder().build() // <-- REMOVED THIS LINE
+
     private var ws: WebSocket? = null
     private val msgChannel = Channel<String>(Channel.BUFFERED)
     val messages = msgChannel.receiveAsFlow()
@@ -38,4 +42,3 @@ class OkHttpWsClient {
     fun send(text: String) { ws?.send(text) }
     fun close() { ws?.close(1000, "closing") }
 }
-

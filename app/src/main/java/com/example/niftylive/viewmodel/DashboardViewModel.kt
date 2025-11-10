@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.niftylive.data.model.InstrumentQuote
 import com.example.niftylive.data.repository.NiftyRepository
+import dagger.hilt.android.lifecycle.HiltViewModel // <-- 1. ADD THIS IMPORT
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject // <-- 2. ADD THIS IMPORT
 
 sealed class DashboardState {
     object Idle : DashboardState()
@@ -15,19 +17,22 @@ sealed class DashboardState {
     data class Error(val message: String) : DashboardState()
 }
 
-class DashboardViewModel(private val repo: NiftyRepository) : ViewModel() {
+@HiltViewModel // <-- 3. ADD THIS ANNOTATION
+class DashboardViewModel @Inject constructor( // <-- 4. ADD THIS ANNOTATION
+    private val repository: NiftyRepository // <-- 5. Renamed 'repo' for consistency
+) : ViewModel() {
 
     private val _state = MutableStateFlow<DashboardState>(DashboardState.Idle)
     val state = _state.asStateFlow()
 
-    val clientCode = MutableStateFlow(repo.getClientCode() ?: "")
-    val accessToken = MutableStateFlow(repo.getAccessToken() ?: "")
+    val clientCode = MutableStateFlow(repository.getClientCode() ?: "")
+    val accessToken = MutableStateFlow(repository.getAccessToken() ?: "")
 
     fun fetchQuote(token: String = "26000") {
         viewModelScope.launch {
             _state.value = DashboardState.Loading
             try {
-                val quote = repo.getQuoteForToken(token)
+                val quote = repository.getQuoteForToken(token) // <-- 5. Use 'repository'
                 if (quote != null) _state.value = DashboardState.Success(quote)
                 else _state.value = DashboardState.Error("⚠️ No quote found")
             } catch (e: Exception) {
@@ -38,7 +43,7 @@ class DashboardViewModel(private val repo: NiftyRepository) : ViewModel() {
 
     fun logout() {
         viewModelScope.launch {
-            repo.saveTokens(null)
+            repository.saveTokens(null) // <-- 5. Use 'repository'
             _state.value = DashboardState.Idle
         }
     }

@@ -3,11 +3,13 @@ package com.example.niftylive.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.niftylive.data.repository.NiftyRepository
+import dagger.hilt.android.lifecycle.HiltViewModel // <-- 1. ADD THIS IMPORT
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import retrofit2.Response
 import com.example.niftylive.data.model.LoginResponse
+import javax.inject.Inject // <-- 2. ADD THIS IMPORT
 
 sealed class AuthState {
     object Idle : AuthState()
@@ -16,7 +18,8 @@ sealed class AuthState {
     data class Error(val message: String) : AuthState()
 }
 
-class AuthViewModel(
+@HiltViewModel // <-- 3. ADD THIS ANNOTATION
+class AuthViewModel @Inject constructor( // <-- 4. ADD THIS ANNOTATION
     private val repository: NiftyRepository
 ) : ViewModel() {
 
@@ -48,7 +51,9 @@ class AuthViewModel(
                     repository.saveCredentials(clientCode, apiKey)
                     _authState.value = AuthState.Success("Login successful")
                 } else {
-                    _authState.value = AuthState.Error("Login failed: Invalid response")
+                    // Check for a specific error message from the response
+                    val errorMsg = body?.message ?: "Login failed: Invalid response"
+                    _authState.value = AuthState.Error(errorMsg)
                 }
 
             } catch (e: Exception) {

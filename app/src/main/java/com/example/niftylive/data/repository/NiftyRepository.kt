@@ -11,10 +11,12 @@ import okhttp3.ResponseBody
 import retrofit2.Response
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.JsonAdapter
+import javax.inject.Inject // <-- 1. ADD THIS IMPORT
 
-class NiftyRepository(
+class NiftyRepository @Inject constructor( // <-- 2. ADD @Inject
     private val api: SmartApiService,
-    private val prefs: SecurePrefs
+    private val prefs: SecurePrefs,
+    private val moshi: Moshi // <-- 3. INJECT MOSHI
 ) {
 
     companion object {
@@ -58,8 +60,7 @@ class NiftyRepository(
 
             Log.e("SmartAPI_LOGIN_RAW", "Response: $errorText")
 
-            // Try parsing manually with lenient Moshi
-            val moshi = Moshi.Builder().build()
+            // 4. USE THE INJECTED MOSHI INSTANCE (REMOVED .Builder())
             val adapter: JsonAdapter<LoginResponse> =
                 moshi.adapter(LoginResponse::class.java).lenient()
 
