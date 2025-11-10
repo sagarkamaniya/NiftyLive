@@ -51,7 +51,12 @@ fun NavGraph(
                 viewModel = authViewModel,
                 onSettingsSaved = {
                     // When saved, just go back to the previous screen (Login)
-                    navController.popBackStack() 
+                    navController.navigate(Routes.LOGIN) {
+                        // This removes the SettingsScreen from the back stack,
+                        // so you can't go "back" to it from the LoginScreen.
+                        popUpTo(Routes.SETTINGS) { inclusive = true }
+                    }
+
                 }
             )
         }
