@@ -1,17 +1,24 @@
 package com.example.niftylive.di
 
 import com.example.niftylive.data.api.SmartApiService
-// ... (other imports) ...
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor // <-- Make sure this is imported
+import okhttp3.logging.HttpLoggingInterceptor // <-- This is re-enabled
 import retrofit2.Retrofit
-// ... (other imports) ...
+import retrofit2.converter.moshi.MoshiConverterFactory
+import retrofit2.converter.scalars.ScalarsConverterFactory
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    // ✅ STEP 1: UN-COMMENT THIS FUNCTION
+    // ✅ This function is now UN-COMMENTED
     @Provides
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
@@ -22,13 +29,36 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    // ✅ STEP 2: ADD 'loggingInterceptor' BACK AS A PARAMETER
-    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient { 
+    // ✅ 'loggingInterceptor' is added back as a parameter
+    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
         return OkHttpClient.Builder()
-            // ✅ STEP 3: UN-COMMENT THIS LINE
-            .addInterceptor(loggingInterceptor) 
+            // ✅ This line is UN-COMMENTED
+            .addInterceptor(loggingInterceptor)
             .build()
     }
 
-    // ... (rest of the file is the same) ...
+    @Provides
+    @Singleton
+    fun provideMoshi(): Moshi {
+        return Moshi.Builder()
+            .add(KotlinJsonAdapterFactory())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(client: OkHttpClient, moshi: Moshi): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://apiconnect.angelone.in/")
+            .client(client)
+            .addConverterFactory(ScalarsConverterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSmartApiService(retrofit: Retrofit): SmartApiService {
+        return retrofit.create(SmartApiService::class.java)
+    }
 }
