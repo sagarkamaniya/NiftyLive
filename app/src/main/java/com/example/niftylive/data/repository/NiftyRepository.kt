@@ -13,7 +13,9 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.example.niftylive.data.repository.ApiResult // <-- IMPORT THE NEW CLASS
+import com.example.niftylive.data.repository.ApiResult
+import com.example.niftylive.data.model.ExchangeTokens // <-- 1. ADD THIS IMPORT
+import com.example.niftylive.data.model.QuoteRequest // <-- 2. ADD THIS IMPORT
 
 @Singleton
 class NiftyRepository @Inject constructor(
@@ -22,6 +24,11 @@ class NiftyRepository @Inject constructor(
     private val moshi: Moshi
 ) {
 
+    // ... (Your companion object, loginWithCredentials, saveTokens, and save/get credentials functions are all fine) ...
+    // ...
+    // ...
+    // --- (The following functions are copied from your file) ---
+    
     companion object {
         const val KEY_ACCESS = "access_token"
         const val KEY_REFRESH = "refresh_token"
@@ -34,9 +41,6 @@ class NiftyRepository @Inject constructor(
         const val KEY_MAC_ADDRESS = "mac_address"
     }
 
-    /**
-     * Login with SmartAPI credentials.
-     */
     suspend fun loginWithCredentials(
         clientCode: String,
         password: String, // This is your MPIN
@@ -69,8 +73,7 @@ class NiftyRepository @Inject constructor(
                     return response
                 }
             }
-
-            // Handle raw or malformed responses
+            
             val errorText = response.errorBody()?.string()
                 ?: "Empty or malformed SmartAPI response"
 
@@ -100,7 +103,6 @@ class NiftyRepository @Inject constructor(
         }
     }
 
-    /** Save tokens securely */
     fun saveTokens(loginData: LoginResponse?) {
         loginData?.data?.jwtToken?.let { prefs.saveString(KEY_ACCESS, it) }
         loginData?.data?.refreshToken?.let { prefs.saveString(KEY_REFRESH, it) }
@@ -110,7 +112,6 @@ class NiftyRepository @Inject constructor(
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
     fun getFeedToken(): String? = prefs.getString(KEY_FEED)
 
-    /** Save all static credentials */
     fun saveCredentials(
         clientCode: String,
         password: String, // Your MPIN
@@ -127,7 +128,6 @@ class NiftyRepository @Inject constructor(
         prefs.saveString(KEY_MAC_ADDRESS, macAddress)
     }
 
-    // Getters for all saved credentials
     fun getClientCode(): String? = prefs.getString(KEY_CLIENT)
     fun getApiKey(): String? = prefs.getString(KEY_APIKEY)
     fun getPassword(): String? = prefs.getString(KEY_PASSWORD)
@@ -135,12 +135,13 @@ class NiftyRepository @Inject constructor(
     fun getPublicIp(): String? = prefs.getString(KEY_PUBLIC_IP)
     fun getMacAddress(): String? = prefs.getString(KEY_MAC_ADDRESS)
 
+    // --- (End of functions copied from your file) ---
+
 
     /** Fetch live quote for an instrument token */
     // ✅ THIS IS THE UPDATED FUNCTION
-    suspend fun getQuoteForToken(token: String): ApiResult<InstrumentQuote> { // <-- 1. CHANGE RETURN TYPE
-        // 1. Get all the required credentials
-        val access = getAccessToken() ?: return ApiResult.Error("No access token found.") // <-- 2. RETURN ERROR
+    suspend fun getQuoteForToken(token: String): ApiResult<InstrumentQuote> {
+        val access = getAccessToken() ?: return ApiResult.Error("No access token found.")
         val apiKey = getApiKey() ?: return ApiResult.Error("No apiKey found.")
         val localIp = getLocalIp() ?: return ApiResult.Error("No localIp found.")
         val publicIp = getPublicIp() ?: return ApiResult.Error("No publicIp found.")
@@ -148,37 +149,32 @@ class NiftyRepository @Inject constructor(
 
         val bearer = "Bearer $access"
 
-        // 2. Create the new request body
-        val body = mapOf(
-            "mode" to "FULL",
-            "exchangeTokens" to mapOf(
-                "NSE" to listOf(token)
-            )
+        // 3. ✅ Create the new request BODY OBJECT
+        val exchangeTokens = ExchangeTokens(nse = listOf(token))
+        val body = QuoteRequest(
+            mode = "FULL",
+            exchangeTokens = exchangeTokens
         )
 
         try {
-            // 3. Call the API
+            // 4. ✅ Call the API with the new object
             val resp: Response<QuoteResponse> = api.getQuote(
                 auth = bearer,
                 apiKey = apiKey,
                 localIp = localIp,
                 publicIp = publicIp,
                 macAddress = macAddress,
-                body = body
+                body = body // <-- This is now a QuoteRequest object
             )
 
-            // 4. Check the response
             if (resp.isSuccessful) {
                 val quote = resp.body()?.data?.fetched?.firstOrNull()
                 if (quote != null) {
-                    // 5. Return Success
                     return ApiResult.Success(quote)
                 } else {
-                    // 6. Return Error (if fetched list is empty)
                     return ApiResult.Error("API returned success but 'fetched' list was empty.")
                 }
             } else {
-                // 7. ✅ THIS IS THE KEY: Return the REAL error message from the server
                 val errorBodyString = resp.errorBody()?.string() ?: "Unknown HTTP error"
                 Log.e("SmartAPI_QUOTE_ERROR", "Error body: $errorBodyString")
                 return ApiResult.Error(errorBodyString)
@@ -186,7 +182,6 @@ class NiftyRepository @Inject constructor(
 
         } catch (e: Exception) {
             Log.e("SmartAPI_QUOTE_ERR", "Exception: ${e.localizedMessage}", e)
-            // 8. Return the exception message
             return ApiResult.Error("Exception: ${e.localizedMessage ?: "Unknown Error"}")
         }
     }

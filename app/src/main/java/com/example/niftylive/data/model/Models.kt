@@ -67,3 +67,20 @@ data class UnfetchedQuote(
     @Json(name = "message") val message: String? = null,
     @Json(name = "errorCode") val errorCode: String? = null
 )
+// ... (Your LoginResponse, QuoteResponse, etc. classes are already here) ...
+
+// --- QUOTE REQUEST MODELS ---
+
+@JsonClass(generateAdapter = true)
+data class QuoteRequest(
+    @Json(name = "mode") val mode: String,
+    @Json(name = "exchangeTokens") val exchangeTokens: ExchangeTokens
+)
+
+@JsonClass(generateAdapter = true)
+data class ExchangeTokens(
+    @Json(name = "NSE") val nse: List<String>
+    // You can add other exchanges here later if needed
+    // @Json(name = "BSE") val bse: List<String>? = null
+)
+
