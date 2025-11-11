@@ -162,7 +162,7 @@ class NiftyRepository @Inject constructor(
                 auth = bearer,
                 apiKey = apiKey,
                 localIp = localIp,
-                publicIp = publicD,
+                publicIp = publicIp,
                 macAddress = macAddress,
                 body = body
             )

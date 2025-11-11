@@ -52,7 +52,7 @@ class DashboardViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             repository.saveTokens(null)
-            _state.value = Dashboard_state.Idle
+            _state.value = DashboardState.Idle
         }
     }
 }
