@@ -1,6 +1,6 @@
 package com.example.niftylive.viewmodel
 
-import android.util.Log // <-- ADD THIS
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.niftylive.data.model.InstrumentQuote
@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.example.niftylive.data.repository.ApiResult // <-- 1. IMPORT THE NEW CLASS
 
 sealed class DashboardState {
     object Idle : DashboardState()
@@ -29,21 +30,21 @@ class DashboardViewModel @Inject constructor(
     val clientCode = MutableStateFlow(repository.getClientCode() ?: "")
     val accessToken = MutableStateFlow(repository.getAccessToken() ?: "")
 
-    fun fetchQuote(token: String = "99926000") { // NIFTY 50 index token
+    // ✅ THIS IS THE UPDATED FUNCTION
+    fun fetchQuote(token: String = "99926000") { // Correct NIFTY 50 index token
         viewModelScope.launch {
             _state.value = DashboardState.Loading
-            try {
-                val quote = repository.getQuoteForToken(token)
-                Log.d("DashboardViewModel", "Quote response for token $token: $quote")
-                if (quote != null) {
-                    _state.value = DashboardState.Success(quote)
-                } else {
-                    Log.w("DashboardViewModel", "No quote found for token $token!")
-                    _state.value = DashboardState.Error("⚠️ No quote found")
+            
+            // 2. Check the result from the repository
+            when (val result = repository.getQuoteForToken(token)) {
+                is ApiResult.Success -> {
+                    // We got the data
+                    _state.value = DashboardState.Success(result.data)
                 }
-            } catch (e: Exception) {
-                Log.e("DashboardViewModel", "Exception during API request: ${e.localizedMessage}", e)
-                _state.value = DashboardState.Error("Exception: ${e.localizedMessage}")
+                is ApiResult.Error -> {
+                    // 3. We got an error, pass the REAL message to the UI
+                    _state.value = DashboardState.Error(result.message)
+                }
             }
         }
     }

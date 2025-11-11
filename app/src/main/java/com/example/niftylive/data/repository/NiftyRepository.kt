@@ -13,6 +13,7 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.example.niftylive.data.repository.ApiResult // <-- 1. IMPORT THE NEW CLASS
 
 @Singleton
 class NiftyRepository @Inject constructor(
@@ -21,162 +22,23 @@ class NiftyRepository @Inject constructor(
     private val moshi: Moshi
 ) {
 
-    companion object {
-        const val KEY_ACCESS = "access_token"
-        const val KEY_REFRESH = "refresh_token"
-        const val KEY_FEED = "feed_token"
-        const val KEY_CLIENT = "client_code"
-        const val KEY_APIKEY = "api_key"
-        const val KEY_PASSWORD = "password" // This will be your MPIN
-        const val KEY_LOCAL_IP = "local_ip"
-        const val KEY_PUBLIC_IP = "public_ip"
-        const val KEY_MAC_ADDRESS = "mac_address"
-    }
-
-    /**
-     * Login with SmartAPI credentials.
-     */
-    suspend fun loginWithCredentials(
-        clientCode: String,
-        password: String, // This is your MPIN
-        apiKey: String,
-        authCode: String, // This is your TOTP
-        localIp: String,
-        publicIp: String,
-        macAddress: String
-    ): Response<LoginResponse> {
-
-        val body = mapOf(
-            "clientcode" to clientCode,
-            "password" to password, // "password" key maps to your PIN
-            "totp" to authCode
-        )
-
-        return try {
-            val response = api.login(
-                apiKey = apiKey,
-                localIp = localIp,
-                publicIp = publicIp,
-                macAddress = macAddress,
-                body = body
-            )
-
-            if (response.isSuccessful) {
-                val responseBody = response.body()
-                if (responseBody != null) {
-                    Log.d("SmartAPI_LOGIN", "✅ Parsed LoginResponse: $responseBody")
-                    return response
-                }
-            }
-
-            // Handle raw or malformed responses
-            val errorText = response.errorBody()?.string()
-                ?: "Empty or malformed SmartAPI response"
-
-            Log.e("SmartAPI_LOGIN_RAW", "Response: $errorText")
-
-            val adapter: JsonAdapter<LoginResponse> =
-                moshi.adapter(LoginResponse::class.java).lenient()
-
-            val parsed = adapter.fromJson(errorText)
-            if (parsed != null) {
-                Log.d("SmartAPI_LOGIN_PARSE", "✅ Lenient parsed: $parsed")
-                Response.success(parsed)
-            } else {
-                Log.e("SmartAPI_LOGIN_PARSE", "❌ Could not parse response")
-                Response.error(
-                    500,
-                    "Invalid or empty response: $errorText".toResponseBody("text/plain".toMediaType())
-                )
-            }
-
-        } catch (e: Exception) {
-            Log.e("SmartAPI_LOGIN_ERR", "❌ Exception during login: ${e.localizedMessage}", e)
-            Response.error(
-                500,
-                "Exception: ${e.localizedMessage}".toResponseBody("text/plain".toMediaType())
-            )
-        }
-    }
-
-    /** Save tokens securely */
-    fun saveTokens(loginData: LoginResponse?) {
-        loginData?.data?.jwtToken?.let { prefs.saveString(KEY_ACCESS, it) }
-        loginData?.data?.refreshToken?.let { prefs.saveString(KEY_REFRESH, it) }
-        loginData?.data?.feedToken?.let { prefs.saveString(KEY_FEED, it) }
-    }
-
-    fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
-    fun getFeedToken(): String? = prefs.getString(KEY_FEED)
-
-    /** Save all static credentials */
-    fun saveCredentials(
-        clientCode: String,
-        password: String, // Your MPIN
-        apiKey: String,
-        localIp: String,
-        publicIp: String,
-        macAddress: String
-    ) {
-        prefs.saveString(KEY_CLIENT, clientCode)
-        prefs.saveString(KEY_PASSWORD, password)
-        prefs.saveString(KEY_APIKEY, apiKey)
-        prefs.saveString(KEY_LOCAL_IP, localIp)
-        prefs.saveString(KEY_PUBLIC_IP, publicIp)
-        prefs.saveString(KEY_MAC_ADDRESS, macAddress)
-    }
-
-    // Getters for all saved credentials
-    fun getClientCode(): String? = prefs.getString(KEY_CLIENT)
-    fun getApiKey(): String? = prefs.getString(KEY_APIKEY)
-    fun getPassword(): String? = prefs.getString(KEY_PASSWORD)
-    fun getLocalIp(): String? = prefs.getString(KEY_LOCAL_IP)
-    fun getPublicIp(): String? = prefs.getString(KEY_PUBLIC_IP)
-    fun getMacAddress(): String? = prefs.getString(KEY_MAC_ADDRESS)
-
-    /** Utility: mask sensitive values for logs */
-    private fun mask(s: String?): String {
-        if (s.isNullOrEmpty()) return "null"
-        return if (s.length <= 8) "${s.take(2)}...${s.takeLast(2)}" else "${s.take(6)}...${s.takeLast(2)}"
-    }
-
-    /**
-     * Fetch live quote for an instrument token.
-     *
-     * Notes:
-     * - Some SmartAPI endpoints expect the feed token for market data; if you have a feed token saved
-     *   you can try using it instead of the jwt access token. The Authorization header here uses the
-     *   access token by default, but you can switch to feed token if required by your account/docs.
-     */
-    suspend fun getQuoteForToken(token: String): InstrumentQuote? {
+    // ... (Your companion object, loginWithCredentials, and all save/get functions are perfect, no changes needed there) ...
+    // ...
+    // ...
+    
+    /** Fetch live quote for an instrument token */
+    // ✅ THIS IS THE UPDATED FUNCTION
+    suspend fun getQuoteForToken(token: String): ApiResult<InstrumentQuote> { // <-- 2. CHANGE RETURN TYPE
         // 1. Get all the required credentials
-        val access = getAccessToken() // jwt token from login
-        val feed = getFeedToken() // feed token from login (may be required for market endpoints)
-        val apiKey = getApiKey() ?: run {
-            Log.w("SmartAPI_QUOTE", "No apiKey found.")
-            return null
-        }
-        val localIp = getLocalIp() ?: run {
-            Log.w("SmartAPI_QUOTE", "No localIp found.")
-            return null
-        }
-        val publicIp = getPublicIp() ?: run {
-            Log.w("SmartAPI_QUOTE", "No publicIp found.")
-            return null
-        }
-        val macAddress = getMacAddress() ?: run {
-            Log.w("SmartAPI_QUOTE", "No macAddress found.")
-            return null
-        }
+        val access = getAccessToken() ?: return ApiResult.Error("No access token found.") // <-- 3. RETURN ERROR
+        val apiKey = getApiKey() ?: return ApiResult.Error("No apiKey found.")
+        val localIp = getLocalIp() ?: return ApiResult.Error("No localIp found.")
+        val publicIp = getPublicIp() ?: return ApiResult.Error("No publicIp found.")
+        val macAddress = getMacAddress() ?: return ApiResult.Error("No macAddress found.")
 
-        // Prefer feed token for market feed if available (uncomment to force feed token)
-        // val tokenForAuth = feed ?: access
-        val tokenForAuth = access ?: run {
-            Log.w("SmartAPI_QUOTE", "No access token found.")
-            return null
-        }
+        val bearer = "Bearer $access"
 
-        val bearer = "Bearer $tokenForAuth"
+        // 2. Create the new request body
         val body = mapOf(
             "mode" to "FULL",
             "exchangeTokens" to mapOf(
@@ -184,13 +46,8 @@ class NiftyRepository @Inject constructor(
             )
         )
 
-        // Log request (mask sensitive values)
-        Log.d(
-            "SmartAPI_QUOTE_REQ",
-            "token=$token, body=$body, access=${mask(access)}, feed=${mask(feed)}, apiKey=${mask(apiKey)}, localIp=$localIp, publicIp=$publicIp, macAddress=$macAddress"
-        )
-
         try {
+            // 3. Call the API
             val resp: Response<QuoteResponse> = api.getQuote(
                 auth = bearer,
                 apiKey = apiKey,
@@ -199,58 +56,28 @@ class NiftyRepository @Inject constructor(
                 macAddress = macAddress,
                 body = body
             )
-// Add right after the try { and the api.getQuote(...) call:
-Log.d("SmartAPI_QUOTE_RESPONSE_STATUS", "Response successful: ${resp.isSuccessful}, Code: ${resp.code()}")
-val rawString = runCatching { resp.errorBody()?.string() }.getOrNull()
-if (rawString != null) {
-    Log.d("SmartAPI_QUOTE_ERROR_BODY", "Raw error body: $rawString")
-}
-            // Network-level logging
-            Log.d("SmartAPI_QUOTE_RAW", "Raw: ${resp.raw()}")
-            Log.d("SmartAPI_QUOTE_CODE", "HTTP Code: ${resp.code()}")
-            Log.d("SmartAPI_QUOTE_HEADERS", "Headers: ${resp.headers()}")
 
-            // Try to obtain parsed body safely
-            val responseBody: QuoteResponse? = runCatching { resp.body() }.getOrElse {
-                Log.e("SmartAPI_QUOTE_BODY_ERR", "Exception parsing response body: ${it.localizedMessage}", it)
-                null
-            }
-            Log.d("SmartAPI_QUOTE_BODY", "Parsed body (may be null): $responseBody")
-
-            // If parsing failed or response not successful, log raw error body
-            if (!resp.isSuccessful || responseBody == null) {
-                val rawError = runCatching { resp.errorBody()?.string() }.getOrNull()
-                if (!rawError.isNullOrEmpty()) {
-                    Log.e("SmartAPI_QUOTE_ERR", "API responded with error body: $rawError")
-                    // Try lenient parsing of error body into QuoteResponse for debugging
-                    val adapter: JsonAdapter<QuoteResponse> = moshi.adapter(QuoteResponse::class.java).lenient()
-                    val parsed = runCatching { adapter.fromJson(rawError) }.getOrNull()
-                    if (parsed != null) {
-                        Log.d("SmartAPI_QUOTE_ERR", "Lenient parsed error body as QuoteResponse: $parsed")
-                    }
+            // 4. Check the response
+            if (resp.isSuccessful) {
+                val quote = resp.body()?.data?.fetched?.firstOrNull()
+                if (quote != null) {
+                    // 5. Return Success
+                    return ApiResult.Success(quote)
                 } else {
-                    Log.e("SmartAPI_QUOTE_ERR", "API not successful and no error body. HTTP code: ${resp.code()}")
+                    // 6. Return Error (if fetched list is empty)
+                    return ApiResult.Error("API returned success but 'fetched' list was empty.")
                 }
+            } else {
+                // 7. ✅ THIS IS THE KEY: Return the REAL error message from the server
+                val errorBodyString = resp.errorBody()?.string() ?: "Unknown HTTP error"
+                Log.e("SmartAPI_QUOTE_ERROR", "Error body: $errorBodyString")
+                return ApiResult.Error(errorBodyString)
             }
 
-            // Only access response fields after null checks
-            if (resp.isSuccessful && responseBody != null) {
-                val fetched = responseBody.data?.fetched
-                if (fetched.isNullOrEmpty()) {
-                    Log.e("SmartAPI_QUOTE", "Fetched list is empty or null! Body: $responseBody")
-                    return null
-                }
-                return fetched.firstOrNull()
-            }
-
-            return null
         } catch (e: Exception) {
-    // CRITICAL: Log the actual exception type and message FIRST
-    Log.e("SmartAPI_QUOTE_EXCEPTION", "❌ EXCEPTION TYPE: ${e::class.simpleName}")
-    Log.e("SmartAPI_QUOTE_EXCEPTION", "❌ EXCEPTION MESSAGE: ${e.message ?: e.localizedMessage ?: "NO MESSAGE"}")
-    Log.e("SmartAPI_QUOTE_EXCEPTION", "❌ EXCEPTION CAUSE: ${e.cause}")
-    Log.e("SmartAPI_QUOTE_ERR", "Exception thrown in getQuoteForToken: ${e.localizedMessage}", e)
-    return null
-}
+            Log.e("SmartAPI_QUOTE_ERR", "Exception: ${e.localizedMessage}", e)
+            // 8. Return the exception message
+            return ApiResult.Error("Exception: ${e.localizedMessage ?: "Unknown Error"}")
+        }
     }
 }
