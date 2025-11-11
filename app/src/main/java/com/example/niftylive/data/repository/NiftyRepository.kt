@@ -166,10 +166,10 @@ class NiftyRepository @Inject constructor(
             )
         )
 
-        // Log all credentials and request
+        // Log all credentials and request (mask if sharing publicly)
         Log.d(
             "SmartAPI_QUOTE_REQ",
-            "token=$token, body=$body, access=$access, apiKey=$apiKey, localIp=$localIp, publicIp=$publicIp, macAddress=$macAddress"
+            "token=$token, body=$body, access=${if (access.length>6) access.take(6)+"..." else access}, apiKey=${if (apiKey.length>6) apiKey.take(6)+"..." else apiKey}, localIp=$localIp, publicIp=$publicIp, macAddress=$macAddress"
         )
 
         try {
@@ -182,17 +182,29 @@ class NiftyRepository @Inject constructor(
                 body = body
             )
 
-            // Log all network responses
+            // Log network-level details
             Log.d("SmartAPI_QUOTE_RAW", "Raw: ${resp.raw()}")
             Log.d("SmartAPI_QUOTE_CODE", "HTTP Code: ${resp.code()}")
             Log.d("SmartAPI_QUOTE_HEADERS", "Headers: ${resp.headers()}")
 
+            // Safely attempt to get parsed body (catch parsing exceptions)
             val responseBody = runCatching { resp.body() }.getOrElse {
                 Log.e("SmartAPI_QUOTE_BODY_ERR", "Exception parsing response body: ${it.localizedMessage}", it)
                 null
             }
-            Log.d("SmartAPI_QUOTE_BODY", "Body: $responseBody")
+            Log.d("SmartAPI_QUOTE_BODY", "Parsed body (may be null): $responseBody")
 
+            // If Retrofit did not parse body, try logging raw error body
+            if (!resp.isSuccessful || responseBody == null) {
+                val rawError = runCatching { resp.errorBody()?.string() }.getOrNull()
+                if (!rawError.isNullOrEmpty()) {
+                    Log.e("SmartAPI_QUOTE_ERR", "API responded with error body: $rawError")
+                } else {
+                    Log.e("SmartAPI_QUOTE_ERR", "API not successful and no error body. HTTP code: ${resp.code()}")
+                }
+            }
+
+            // Only access response fields after null checks
             if (resp.isSuccessful && responseBody != null) {
                 val fetched = responseBody.data?.fetched
                 if (fetched.isNullOrEmpty()) {
@@ -200,17 +212,11 @@ class NiftyRepository @Inject constructor(
                     return null
                 }
                 return fetched.firstOrNull()
-            } else {
-                val errorBodyString = try {
-                    resp.errorBody()?.string()
-                } catch (e: Exception) {
-                    "error reading errorBody: $e"
-                }
-                Log.e("SmartAPI_QUOTE_ERR", "API call FAILED. Code: ${resp.code()} Body: $errorBodyString")
             }
 
             return null
         } catch (e: Exception) {
+            // Full exception log including stacktrace
             Log.e("SmartAPI_QUOTE_ERR", "Exception thrown in getQuoteForToken: ${e.localizedMessage}", e)
             return null
         }

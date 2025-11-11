@@ -1,6 +1,5 @@
 package com.example.niftylive.ui.screens
 
-// ✅ ALL THE MISSING IMPORTS ARE HERE
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -18,22 +17,33 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.niftylive.viewmodel.DashboardState
 import com.example.niftylive.viewmodel.DashboardViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
-    
+
     // 1. Get the UI state from the ViewModel
     val state by viewModel.state.collectAsState()
 
+    // Focus & keyboard controllers
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     // 2. This block runs once when the screen first appears
     LaunchedEffect(Unit) {
+        // Clear any focused text fields and hide keyboard to prevent auto-opening
+        focusManager.clearFocus()
+        keyboardController?.hide()
         // 3. Tell the ViewModel to fetch the quote
         viewModel.fetchQuote()
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Box(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
             // 4. Show UI based on the current state
@@ -41,7 +51,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                 is DashboardState.Idle -> {
                     // The initial state
                     Text(
-                        text = "Welcome to NiftyLive 📈",
+                        text = "Welcome to NiftyLive ",
                         style = MaterialTheme.typography.headlineMedium
                     )
                 }
@@ -57,7 +67,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                     )
                 }
                 is DashboardState.Success -> {
-                    // ✅ SUCCESS! Show the quote data
+                    // SUCCESS! Show the quote data
                     val quote = currentState.quote
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -66,14 +76,12 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "₹${quote.ltp}", // Use new field 'ltp'
+                            text = "${quote.ltp}",
                             style = MaterialTheme.typography.displaySmall,
-                            // Show green for positive, red for negative
                             color = if ((quote.netChange ?: 0.0) >= 0) Color(0xFF00C853) else Color(0xFFD50000)
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            // Use new fields 'netChange' and 'percentChange'
                             text = "Change: ${quote.netChange} (${quote.percentChange}%)",
                             style = MaterialTheme.typography.bodyLarge
                         )
