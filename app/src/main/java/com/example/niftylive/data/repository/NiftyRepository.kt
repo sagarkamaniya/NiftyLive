@@ -135,7 +135,6 @@ class NiftyRepository @Inject constructor(
     fun getMacAddress(): String? = prefs.getString(KEY_MAC_ADDRESS)
 
     /** Fetch live quote for an instrument token */
-    // THIS FUNCTION NOW LOGS THE FULL API RESPONSE
     suspend fun getQuoteForToken(token: String): InstrumentQuote? {
         // 1. Get all the required credentials
         val access = getAccessToken() ?: run {
@@ -160,17 +159,17 @@ class NiftyRepository @Inject constructor(
         }
 
         val bearer = "Bearer $access"
-
-        // 2. Create the new request body from the documentation
         val body = mapOf(
             "mode" to "FULL",
             "exchangeTokens" to mapOf(
-                "NSE" to listOf(token) // Use the "26000" token from your ViewModel
+                "NSE" to listOf(token)
             )
         )
 
+        // Aggressive logging for debug
+        Log.d("SmartAPI_QUOTE_REQ", "token=$token, body=$body, access=$access, apiKey=$apiKey, localIp=$localIp, publicIp=$publicIp, macAddress=$macAddress")
+
         try {
-            // 3. Call the new API function with all headers
             val resp: Response<QuoteResponse> = api.getQuote(
                 auth = bearer,
                 apiKey = apiKey,
@@ -180,24 +179,35 @@ class NiftyRepository @Inject constructor(
                 body = body
             )
 
-            // Log raw response details for debugging
+            // Log network result
             Log.d("SmartAPI_QUOTE_RAW", "Raw: ${resp.raw()}")
             Log.d("SmartAPI_QUOTE_CODE", "HTTP Code: ${resp.code()}")
             Log.d("SmartAPI_QUOTE_HEADERS", "Headers: ${resp.headers()}")
 
-            if (resp.isSuccessful) {
-                Log.d("SmartAPI_QUOTE_BODY", "Body: ${resp.body()}")
-                // 4. Parse the new response structure
-                return resp.body()?.data?.fetched?.firstOrNull()
-            } else {
-                val errorBodyString = resp.errorBody()?.string()
-                Log.e("SmartAPI_QUOTE_ERROR", "Error body: $errorBodyString")
+            try {
+                val responseBody = resp.body()
+                Log.d("SmartAPI_QUOTE_BODY", "Body: $responseBody")
+                if (resp.isSuccessful) {
+                    val fetched = responseBody?.data?.fetched
+                    if (fetched.isNullOrEmpty()) {
+                        Log.e("SmartAPI_QUOTE", "Fetched list is empty or null! Body: $responseBody")
+                        // Still return null so your ViewModel can handle with error message
+                        return null
+                    }
+                    return fetched.firstOrNull()
+                } else {
+                    val errorBodyString =
+                        try { resp.errorBody()?.string() } catch (e: Exception) { "error reading errorBody: $e" }
+                    Log.e("SmartAPI_QUOTE_ERR", "API call FAILED. Code: ${resp.code()} Body: $errorBodyString")
+                }
+            } catch (jp: Exception) {
+                Log.e("SmartAPI_QUOTE_PARSE", "Could not parse response: ${jp.localizedMessage}")
             }
 
             return null
 
         } catch (e: Exception) {
-            Log.e("SmartAPI_QUOTE_ERR", "Exception: ${e.localizedMessage}", e)
+            Log.e("SmartAPI_QUOTE_ERR", "Exception thrown: ${e.localizedMessage}", e)
             return null
         }
     }
