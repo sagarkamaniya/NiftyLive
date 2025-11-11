@@ -5,7 +5,7 @@ import com.example.niftylive.data.api.SmartApiService
 import com.example.niftylive.data.model.InstrumentQuote
 import com.example.niftylive.data.model.LoginResponse
 import com.example.niftylive.data.model.QuoteResponse
-import com.example.niftylive.utils.SecurePrefs // Make sure this file exists
+import com.example.niftylive.utils.SecurePrefs
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import okhttp3.MediaType.Companion.toMediaType
@@ -134,13 +134,24 @@ class NiftyRepository @Inject constructor(
     fun getPublicIp(): String? = prefs.getString(KEY_PUBLIC_IP)
     fun getMacAddress(): String? = prefs.getString(KEY_MAC_ADDRESS)
 
-    /** Fetch live quote for an instrument token */
+    /** Utility: mask sensitive values for logs */
+    private fun mask(s: String?): String {
+        if (s.isNullOrEmpty()) return "null"
+        return if (s.length <= 8) "${s.take(2)}...${s.takeLast(2)}" else "${s.take(6)}...${s.takeLast(2)}"
+    }
+
+    /**
+     * Fetch live quote for an instrument token.
+     *
+     * Notes:
+     * - Some SmartAPI endpoints expect the feed token for market data; if you have a feed token saved
+     *   you can try using it instead of the jwt access token. The Authorization header here uses the
+     *   access token by default, but you can switch to feed token if required by your account/docs.
+     */
     suspend fun getQuoteForToken(token: String): InstrumentQuote? {
         // 1. Get all the required credentials
-        val access = getAccessToken() ?: run {
-            Log.w("SmartAPI_QUOTE", "No access token found.")
-            return null
-        }
+        val access = getAccessToken() // jwt token from login
+        val feed = getFeedToken() // feed token from login (may be required for market endpoints)
         val apiKey = getApiKey() ?: run {
             Log.w("SmartAPI_QUOTE", "No apiKey found.")
             return null
@@ -158,7 +169,14 @@ class NiftyRepository @Inject constructor(
             return null
         }
 
-        val bearer = "Bearer $access"
+        // Prefer feed token for market feed if available (uncomment to force feed token)
+        // val tokenForAuth = feed ?: access
+        val tokenForAuth = access ?: run {
+            Log.w("SmartAPI_QUOTE", "No access token found.")
+            return null
+        }
+
+        val bearer = "Bearer $tokenForAuth"
         val body = mapOf(
             "mode" to "FULL",
             "exchangeTokens" to mapOf(
@@ -166,10 +184,10 @@ class NiftyRepository @Inject constructor(
             )
         )
 
-        // Log all credentials and request (mask if sharing publicly)
+        // Log request (mask sensitive values)
         Log.d(
             "SmartAPI_QUOTE_REQ",
-            "token=$token, body=$body, access=${if (access.length>6) access.take(6)+"..." else access}, apiKey=${if (apiKey.length>6) apiKey.take(6)+"..." else apiKey}, localIp=$localIp, publicIp=$publicIp, macAddress=$macAddress"
+            "token=$token, body=$body, access=${mask(access)}, feed=${mask(feed)}, apiKey=${mask(apiKey)}, localIp=$localIp, publicIp=$publicIp, macAddress=$macAddress"
         )
 
         try {
@@ -182,23 +200,29 @@ class NiftyRepository @Inject constructor(
                 body = body
             )
 
-            // Log network-level details
+            // Network-level logging
             Log.d("SmartAPI_QUOTE_RAW", "Raw: ${resp.raw()}")
             Log.d("SmartAPI_QUOTE_CODE", "HTTP Code: ${resp.code()}")
             Log.d("SmartAPI_QUOTE_HEADERS", "Headers: ${resp.headers()}")
 
-            // Safely attempt to get parsed body (catch parsing exceptions)
-            val responseBody = runCatching { resp.body() }.getOrElse {
+            // Try to obtain parsed body safely
+            val responseBody: QuoteResponse? = runCatching { resp.body() }.getOrElse {
                 Log.e("SmartAPI_QUOTE_BODY_ERR", "Exception parsing response body: ${it.localizedMessage}", it)
                 null
             }
             Log.d("SmartAPI_QUOTE_BODY", "Parsed body (may be null): $responseBody")
 
-            // If Retrofit did not parse body, try logging raw error body
+            // If parsing failed or response not successful, log raw error body
             if (!resp.isSuccessful || responseBody == null) {
                 val rawError = runCatching { resp.errorBody()?.string() }.getOrNull()
                 if (!rawError.isNullOrEmpty()) {
                     Log.e("SmartAPI_QUOTE_ERR", "API responded with error body: $rawError")
+                    // Try lenient parsing of error body into QuoteResponse for debugging
+                    val adapter: JsonAdapter<QuoteResponse> = moshi.adapter(QuoteResponse::class.java).lenient()
+                    val parsed = runCatching { adapter.fromJson(rawError) }.getOrNull()
+                    if (parsed != null) {
+                        Log.d("SmartAPI_QUOTE_ERR", "Lenient parsed error body as QuoteResponse: $parsed")
+                    }
                 } else {
                     Log.e("SmartAPI_QUOTE_ERR", "API not successful and no error body. HTTP code: ${resp.code()}")
                 }
@@ -216,7 +240,7 @@ class NiftyRepository @Inject constructor(
 
             return null
         } catch (e: Exception) {
-            // Full exception log including stacktrace
+            // Full exception log including stacktrace to surface exact cause
             Log.e("SmartAPI_QUOTE_ERR", "Exception thrown in getQuoteForToken: ${e.localizedMessage}", e)
             return null
         }
