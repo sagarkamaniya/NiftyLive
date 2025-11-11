@@ -1,6 +1,6 @@
 package com.example.niftylive.viewmodel
 
-import android.util.Log
+import android.util.Log 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.niftylive.data.model.InstrumentQuote
@@ -52,7 +52,7 @@ class DashboardViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             repository.saveTokens(null)
-            _state.value = DashboardState.Idle
+            _state.value = Dashboard_state.Idle
         }
     }
 }
