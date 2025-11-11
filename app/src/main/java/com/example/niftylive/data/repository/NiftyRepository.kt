@@ -199,7 +199,12 @@ class NiftyRepository @Inject constructor(
                 macAddress = macAddress,
                 body = body
             )
-
+// Add right after the try { and the api.getQuote(...) call:
+Log.d("SmartAPI_QUOTE_RESPONSE_STATUS", "Response successful: ${resp.isSuccessful}, Code: ${resp.code()}")
+val rawString = runCatching { resp.errorBody()?.string() }.getOrNull()
+if (rawString != null) {
+    Log.d("SmartAPI_QUOTE_ERROR_BODY", "Raw error body: $rawString")
+}
             // Network-level logging
             Log.d("SmartAPI_QUOTE_RAW", "Raw: ${resp.raw()}")
             Log.d("SmartAPI_QUOTE_CODE", "HTTP Code: ${resp.code()}")
@@ -240,8 +245,10 @@ class NiftyRepository @Inject constructor(
 
             return null
         } catch (e: Exception) {
-    // Force print exception message first
-    Log.e("SmartAPI_QUOTE_EXCEPTION_MESSAGE", "ACTUAL EXCEPTION: ${e.message ?: e.localizedMessage ?: e::class.simpleName}")
+    // CRITICAL: Log the actual exception type and message FIRST
+    Log.e("SmartAPI_QUOTE_EXCEPTION", "❌ EXCEPTION TYPE: ${e::class.simpleName}")
+    Log.e("SmartAPI_QUOTE_EXCEPTION", "❌ EXCEPTION MESSAGE: ${e.message ?: e.localizedMessage ?: "NO MESSAGE"}")
+    Log.e("SmartAPI_QUOTE_EXCEPTION", "❌ EXCEPTION CAUSE: ${e.cause}")
     Log.e("SmartAPI_QUOTE_ERR", "Exception thrown in getQuoteForToken: ${e.localizedMessage}", e)
     return null
 }
