@@ -20,7 +20,7 @@ sealed class DashboardState {
 @HiltViewModel // <-- 3. ADD THIS ANNOTATION
 class DashboardViewModel @Inject constructor( // <-- 4. ADD THIS ANNOTATION
     private val repository: NiftyRepository
-) : ViewModel() {
+) : ViewModel( ) {
 
     private val _state = MutableStateFlow<DashboardState>(DashboardState.Idle)
     val state = _state.asStateFlow()

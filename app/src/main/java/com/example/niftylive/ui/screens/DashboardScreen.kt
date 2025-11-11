@@ -17,9 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.niftylive.viewmodel.DashboardState
 import com.example.niftylive.viewmodel.DashboardViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
-fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
+fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
     
     // 1. Get the UI state from the ViewModel
     val state by viewModel.state.collectAsState()
