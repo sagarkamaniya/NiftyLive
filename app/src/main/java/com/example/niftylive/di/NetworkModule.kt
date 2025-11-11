@@ -8,7 +8,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
+import okhttp3.logging.HttpLoggingInterceptor // This import is no longer used but is fine
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
@@ -18,6 +18,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
+    // ✅ STEP 1: Commented out the logger
+    /*
     @Provides
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
@@ -25,12 +27,14 @@ object NetworkModule {
             level = HttpLoggingInterceptor.Level.BODY
         }
     }
+    */
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
+    fun provideOkHttpClient(): OkHttpClient { // ✅ STEP 2: Removed 'loggingInterceptor' from parameters
         return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
+            // ✅ STEP 3: Removed the interceptor line
+            // .addInterceptor(loggingInterceptor) 
             .build()
     }
 
@@ -46,7 +50,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(client: OkHttpClient, moshi: Moshi): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://apiconnect.angelone.in/") // ✅ New API Base URL
+            .baseUrl("https://apiconnect.angelone.in/") 
             .client(client)
             .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(MoshiConverterFactory.create(moshi))
