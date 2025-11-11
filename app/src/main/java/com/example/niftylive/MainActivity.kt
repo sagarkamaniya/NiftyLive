@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.rememberNavController
 import com.example.niftylive.ui.navigation.NavGraph
 import com.example.niftylive.viewmodel.AuthViewModel
-import com.example.niftylive.viewmodel.DashboardViewModel
+
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
