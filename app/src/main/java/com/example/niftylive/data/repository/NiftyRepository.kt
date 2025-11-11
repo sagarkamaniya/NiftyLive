@@ -240,9 +240,10 @@ class NiftyRepository @Inject constructor(
 
             return null
         } catch (e: Exception) {
-            // Full exception log including stacktrace to surface exact cause
-            Log.e("SmartAPI_QUOTE_ERR", "Exception thrown in getQuoteForToken: ${e.localizedMessage}", e)
-            return null
-        }
+    // Force print exception message first
+    Log.e("SmartAPI_QUOTE_EXCEPTION_MESSAGE", "ACTUAL EXCEPTION: ${e.message ?: e.localizedMessage ?: e::class.simpleName}")
+    Log.e("SmartAPI_QUOTE_ERR", "Exception thrown in getQuoteForToken: ${e.localizedMessage}", e)
+    return null
+}
     }
 }
