@@ -12,9 +12,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.Response
 import javax.inject.Inject
-import javax.inject.Singleton // ✅ 1. ADD THIS IMPORT
+import javax.inject.Singleton
 
-@Singleton // ✅ 2. ADD THIS ANNOTATION
+@Singleton
 class NiftyRepository @Inject constructor(
     private val api: SmartApiService,
     private val prefs: SecurePrefs,
@@ -134,16 +134,30 @@ class NiftyRepository @Inject constructor(
     fun getPublicIp(): String? = prefs.getString(KEY_PUBLIC_IP)
     fun getMacAddress(): String? = prefs.getString(KEY_MAC_ADDRESS)
 
-
     /** Fetch live quote for an instrument token */
-    // ✅ THIS IS THE FULLY UPDATED FUNCTION
+    // THIS FUNCTION NOW LOGS THE FULL API RESPONSE
     suspend fun getQuoteForToken(token: String): InstrumentQuote? {
         // 1. Get all the required credentials
-        val access = getAccessToken() ?: return null
-        val apiKey = getApiKey() ?: return null
-        val localIp = getLocalIp() ?: return null
-        val publicIp = getPublicIp() ?: return null
-        val macAddress = getMacAddress() ?: return null
+        val access = getAccessToken() ?: run {
+            Log.w("SmartAPI_QUOTE", "No access token found.")
+            return null
+        }
+        val apiKey = getApiKey() ?: run {
+            Log.w("SmartAPI_QUOTE", "No apiKey found.")
+            return null
+        }
+        val localIp = getLocalIp() ?: run {
+            Log.w("SmartAPI_QUOTE", "No localIp found.")
+            return null
+        }
+        val publicIp = getPublicIp() ?: run {
+            Log.w("SmartAPI_QUOTE", "No publicIp found.")
+            return null
+        }
+        val macAddress = getMacAddress() ?: run {
+            Log.w("SmartAPI_QUOTE", "No macAddress found.")
+            return null
+        }
 
         val bearer = "Bearer $access"
 
@@ -166,16 +180,24 @@ class NiftyRepository @Inject constructor(
                 body = body
             )
 
+            // Log raw response details for debugging
+            Log.d("SmartAPI_QUOTE_RAW", "Raw: ${resp.raw()}")
+            Log.d("SmartAPI_QUOTE_CODE", "HTTP Code: ${resp.code()}")
+            Log.d("SmartAPI_QUOTE_HEADERS", "Headers: ${resp.headers()}")
+
             if (resp.isSuccessful) {
+                Log.d("SmartAPI_QUOTE_BODY", "Body: ${resp.body()}")
                 // 4. Parse the new response structure
                 return resp.body()?.data?.fetched?.firstOrNull()
+            } else {
+                val errorBodyString = resp.errorBody()?.string()
+                Log.e("SmartAPI_QUOTE_ERROR", "Error body: $errorBodyString")
             }
 
-            Log.e("SmartAPI_QUOTE", "Failed: ${resp.errorBody()?.string()}")
             return null
 
         } catch (e: Exception) {
-            Log.e("SmartAPI_QUOTE_ERR", "Exception: ${e.localizedMessage}")
+            Log.e("SmartAPI_QUOTE_ERR", "Exception: ${e.localizedMessage}", e)
             return null
         }
     }
