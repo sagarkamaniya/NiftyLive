@@ -29,7 +29,7 @@ class DashboardViewModel @Inject constructor(
     val clientCode = MutableStateFlow(repository.getClientCode() ?: "")
     val accessToken = MutableStateFlow(repository.getAccessToken() ?: "")
 
-    fun fetchQuote(token: String = "26000") { // NIFTY 50 index token
+    fun fetchQuote(token: String = "99926000") { // NIFTY 50 index token
         viewModelScope.launch {
             _state.value = DashboardState.Loading
             try {
