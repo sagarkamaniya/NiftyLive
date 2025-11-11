@@ -19,8 +19,7 @@ object Routes {
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    authViewModel: AuthViewModel,
-    dashboardViewModel: DashboardViewModel
+    authViewModel: AuthViewModel
 ) {
     NavHost(
         navController = navController,

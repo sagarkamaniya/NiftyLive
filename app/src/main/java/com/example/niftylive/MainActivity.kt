@@ -17,29 +17,27 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
-    private val dashboardViewModel: DashboardViewModel by viewModels()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-            NiftyLiveApp(authViewModel, dashboardViewModel)
+            NiftyLiveApp(authViewModel)
         }
     }
 }
 
 @Composable
 fun NiftyLiveApp(
-    authViewModel: AuthViewModel,
-    dashboardViewModel: DashboardViewModel
+    authViewModel: AuthViewModel
 ) {
     val navController = rememberNavController()
 
     Surface(color = MaterialTheme.colorScheme.background) {
         NavGraph(
             navController = navController,
-            authViewModel = authViewModel,
-            dashboardViewModel = dashboardViewModel
+            authViewModel = authViewModel
         )
     }
 }
