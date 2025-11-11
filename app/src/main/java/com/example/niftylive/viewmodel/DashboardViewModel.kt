@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.niftylive.data.model.InstrumentQuote
 import com.example.niftylive.data.repository.NiftyRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel // <-- 1. IMPORT THIS
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import javax.inject.Inject // <-- 2. IMPORT THIS
 
 sealed class DashboardState {
     object Idle : DashboardState()
@@ -17,8 +17,8 @@ sealed class DashboardState {
     data class Error(val message: String) : DashboardState()
 }
 
-@HiltViewModel
-class DashboardViewModel @Inject constructor(
+@HiltViewModel // <-- 3. ADD THIS ANNOTATION
+class DashboardViewModel @Inject constructor( // <-- 4. ADD THIS ANNOTATION
     private val repository: NiftyRepository
 ) : ViewModel() {
 
@@ -28,12 +28,10 @@ class DashboardViewModel @Inject constructor(
     val clientCode = MutableStateFlow(repository.getClientCode() ?: "")
     val accessToken = MutableStateFlow(repository.getAccessToken() ?: "")
 
-    fun fetchQuote(token: String = "26000") {
+    fun fetchQuote(token: String = "26000") { // NIFTY 50 index token
         viewModelScope.launch {
             _state.value = DashboardState.Loading
             try {
-                // ✅ TODO: This will fail until you update the getQuote
-                // API call in your repository and service.
                 val quote = repository.getQuoteForToken(token)
                 if (quote != null) _state.value = DashboardState.Success(quote)
                 else _state.value = DashboardState.Error("⚠️ No quote found")
