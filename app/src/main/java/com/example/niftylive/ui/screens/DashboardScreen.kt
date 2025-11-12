@@ -36,7 +36,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
         focusManager.clearFocus()
         keyboardController?.hide()
         // 3. Tell the ViewModel to fetch the quote
-        viewModel.fetchQuote()
+        viewModel.startDataPolling()
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {

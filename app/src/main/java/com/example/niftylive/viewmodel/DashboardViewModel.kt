@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.niftylive.data.model.InstrumentQuote
 import com.example.niftylive.data.repository.NiftyRepository
+import kotlinx.coroutines.delay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,8 +32,9 @@ class DashboardViewModel @Inject constructor(
     val accessToken = MutableStateFlow(repository.getAccessToken() ?: "")
 
     // ✅ THIS IS THE UPDATED FUNCTION
-    fun fetchQuote(token: String = "99926000") { // Correct NIFTY 50 index token
+    fun startDataPolling(token: String = "99926000") { // Correct NIFTY 50 index token
         viewModelScope.launch {
+        	while(true) {
             _state.value = DashboardState.Loading
             
             // 2. Check the result from the repository
@@ -46,9 +48,10 @@ class DashboardViewModel @Inject constructor(
                     _state.value = DashboardState.Error(result.message)
                 }
             }
+            delay(1000)
         }
     }
-
+}
     fun logout() {
         viewModelScope.launch {
             repository.saveTokens(null)
