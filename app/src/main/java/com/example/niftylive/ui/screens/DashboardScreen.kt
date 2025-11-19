@@ -12,13 +12,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.niftylive.viewmodel.DashboardState
-import com.example.niftylive.viewmodel.DashboardViewModel
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.niftylive.viewmodel.DashboardState
+import com.example.niftylive.viewmodel.DashboardViewModel
 
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
@@ -51,7 +50,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                 is DashboardState.Idle -> {
                     // The initial state
                     Text(
-                        text = "Welcome to NiftyLive ",
+                        text = "Welcome to NiftyLive 📈",
                         style = MaterialTheme.typography.headlineMedium
                     )
                 }
@@ -74,13 +73,19 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                             text = quote.tradingSymbol ?: "NIFTY 50",
                             style = MaterialTheme.typography.headlineMedium
                         )
+                        
                         Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "${quote.ltp}",
+                        
+                        // ✅ REPLACED Text WITH TickerText FOR ANIMATION
+                        // This will animate only the digits that change
+                        TickerText(
+                            text = "₹${quote.ltp}", 
                             style = MaterialTheme.typography.displaySmall,
                             color = if ((quote.netChange ?: 0.0) >= 0) Color(0xFF00C853) else Color(0xFFD50000)
                         )
+                        
                         Spacer(Modifier.height(8.dp))
+                        
                         Text(
                             text = "Change: ${quote.netChange} (${quote.percentChange}%)",
                             style = MaterialTheme.typography.bodyLarge
