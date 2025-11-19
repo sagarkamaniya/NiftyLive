@@ -16,16 +16,28 @@ import com.example.niftylive.viewmodel.AuthViewModel
 @Composable
 fun SettingsScreen(
     viewModel: AuthViewModel = viewModel(),
-    onSettingsSaved: () -> Unit // This comes from the NavGraph
+    onSettingsSaved: () -> Unit
 ) {
+    // Initial values are empty
     var clientCode by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") } // Your MPIN
+    var password by remember { mutableStateOf("") }
     var apiKey by remember { mutableStateOf("") }
     var localIp by remember { mutableStateOf("") }
     var publicIp by remember { mutableStateOf("") }
     var macAddress by remember { mutableStateOf("") }
 
     var saveMessage by remember { mutableStateOf<String?>(null) }
+
+    // ✅ LOAD SAVED DATA WHEN SCREEN OPENS
+    LaunchedEffect(Unit) {
+        val saved = viewModel.getSavedCredentials()
+        clientCode = saved.clientCode
+        password = saved.password
+        apiKey = saved.apiKey
+        localIp = saved.localIp
+        publicIp = saved.publicIp
+        macAddress = saved.macAddress
+    }
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -37,7 +49,7 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text("Enter Credentials", style = MaterialTheme.typography.headlineMedium)
-            Text("This data will be saved securely one time.")
+            Text("This data will be saved securely.")
 
             Spacer(Modifier.height(24.dp))
 
@@ -88,7 +100,6 @@ fun SettingsScreen(
 
             Button(
                 onClick = {
-                    // 1. Save the data
                     viewModel.saveStaticCredentials(
                         clientCode = clientCode,
                         password = password,
@@ -97,11 +108,7 @@ fun SettingsScreen(
                         publicIp = publicIp,
                         macAddress = macAddress
                     )
-                    
-                    // 2. Show a message
                     saveMessage = "Credentials Saved!"
-                    
-                    // 3. ✅ This is the line that triggers navigation
                     onSettingsSaved()
                 },
                 modifier = Modifier.fillMaxWidth()

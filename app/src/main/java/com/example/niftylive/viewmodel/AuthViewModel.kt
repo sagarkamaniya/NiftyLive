@@ -11,6 +11,16 @@ import kotlinx.coroutines.launch
 import retrofit2.Response
 import javax.inject.Inject
 
+// ✅ Create a simple data class to hold credentials for the UI
+data class SavedCredentials(
+    val clientCode: String,
+    val password: String,
+    val apiKey: String,
+    val localIp: String,
+    val publicIp: String,
+    val macAddress: String
+)
+
 sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
@@ -26,34 +36,23 @@ class AuthViewModel @Inject constructor(
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState
 
-    // ✅ NEW: Check session immediately when the ViewModel starts
     init {
         checkAutoLogin()
     }
 
-    // ✅ NEW: Logic for Auto-Login
     private fun checkAutoLogin() {
         viewModelScope.launch {
-            // 1. If we have no saved token, do nothing (stay in Idle state)
             if (repository.getAccessToken() == null) return@launch
-
-            // 2. Show loading while we validate
             _authState.value = AuthState.Loading
-            
-            // 3. Verify if the token is still valid with Angel One (call getProfile)
             val isValid = repository.validateSession()
-            
             if (isValid) {
-                // 4. Token is good! Auto-login successfully.
                 _authState.value = AuthState.Success("Welcome back!")
             } else {
-                // 5. Token expired or invalid. Reset to Idle so user can log in.
                 _authState.value = AuthState.Idle
             }
         }
     }
 
-    // --- Existing Login Logic (Unchanged) ---
     fun login(totp: String) {
         if (totp.isBlank() || totp.length < 6) {
             _authState.value = AuthState.Error("A valid 6-digit TOTP is required")
@@ -61,7 +60,7 @@ class AuthViewModel @Inject constructor(
         }
 
         val clientCode = repository.getClientCode()
-        val password = repository.getPassword() // Your MPIN
+        val password = repository.getPassword()
         val apiKey = repository.getApiKey()
         val localIp = repository.getLocalIp()
         val publicIp = repository.getPublicIp()
@@ -75,7 +74,6 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _authState.value = AuthState.Loading
-
                 val response: Response<LoginResponse> = repository.loginWithCredentials(
                     clientCode = clientCode,
                     password = password,
@@ -85,9 +83,7 @@ class AuthViewModel @Inject constructor(
                     publicIp = publicIp,
                     macAddress = macAddress
                 )
-
                 val body = response.body()
-
                 if (response.isSuccessful && body?.data != null) {
                     repository.saveTokens(body)
                     _authState.value = AuthState.Success("Login successful")
@@ -95,7 +91,6 @@ class AuthViewModel @Inject constructor(
                     val errorMsg = body?.message ?: "Login failed: Invalid response"
                     _authState.value = AuthState.Error(errorMsg)
                 }
-
             } catch (e: Exception) {
                 _authState.value = AuthState.Error("Error: ${e.localizedMessage ?: "Unknown"}")
             }
@@ -111,6 +106,18 @@ class AuthViewModel @Inject constructor(
         macAddress: String
     ) {
         repository.saveCredentials(clientCode, password, apiKey, localIp, publicIp, macAddress)
+    }
+
+    // ✅ NEW FUNCTION: Get credentials to show in Settings
+    fun getSavedCredentials(): SavedCredentials {
+        return SavedCredentials(
+            clientCode = repository.getClientCode() ?: "",
+            password = repository.getPassword() ?: "",
+            apiKey = repository.getApiKey() ?: "",
+            localIp = repository.getLocalIp() ?: "",
+            publicIp = repository.getPublicIp() ?: "",
+            macAddress = repository.getMacAddress() ?: ""
+        )
     }
 
     fun resetState() {
