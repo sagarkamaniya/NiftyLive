@@ -2,8 +2,10 @@ package com.example.niftylive.data.repository
 
 import android.util.Log
 import com.example.niftylive.data.api.SmartApiService
+import com.example.niftylive.data.model.ExchangeTokens
 import com.example.niftylive.data.model.InstrumentQuote
 import com.example.niftylive.data.model.LoginResponse
+import com.example.niftylive.data.model.QuoteRequest
 import com.example.niftylive.data.model.QuoteResponse
 import com.example.niftylive.utils.SecurePrefs
 import com.squareup.moshi.JsonAdapter
@@ -13,9 +15,6 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.example.niftylive.data.repository.ApiResult
-import com.example.niftylive.data.model.ExchangeTokens // <-- 1. ADD THIS IMPORT
-import com.example.niftylive.data.model.QuoteRequest // <-- 2. ADD THIS IMPORT
 
 @Singleton
 class NiftyRepository @Inject constructor(
@@ -24,28 +23,24 @@ class NiftyRepository @Inject constructor(
     private val moshi: Moshi
 ) {
 
-    // ... (Your companion object, loginWithCredentials, saveTokens, and save/get credentials functions are all fine) ...
-    // ...
-    // ...
-    // --- (The following functions are copied from your file) ---
-    
     companion object {
         const val KEY_ACCESS = "access_token"
         const val KEY_REFRESH = "refresh_token"
         const val KEY_FEED = "feed_token"
         const val KEY_CLIENT = "client_code"
         const val KEY_APIKEY = "api_key"
-        const val KEY_PASSWORD = "password" // This will be your MPIN
+        const val KEY_PASSWORD = "password"
         const val KEY_LOCAL_IP = "local_ip"
         const val KEY_PUBLIC_IP = "public_ip"
         const val KEY_MAC_ADDRESS = "mac_address"
     }
 
+    // --- 1. LOGIN FUNCTION ---
     suspend fun loginWithCredentials(
         clientCode: String,
-        password: String, // This is your MPIN
+        password: String,
         apiKey: String,
-        authCode: String, // This is your TOTP
+        authCode: String,
         localIp: String,
         publicIp: String,
         macAddress: String
@@ -53,7 +48,7 @@ class NiftyRepository @Inject constructor(
 
         val body = mapOf(
             "clientcode" to clientCode,
-            "password" to password, // "password" key maps to your PIN
+            "password" to password,
             "totp" to authCode
         )
 
@@ -73,7 +68,7 @@ class NiftyRepository @Inject constructor(
                     return response
                 }
             }
-            
+
             val errorText = response.errorBody()?.string()
                 ?: "Empty or malformed SmartAPI response"
 
@@ -103,18 +98,43 @@ class NiftyRepository @Inject constructor(
         }
     }
 
+    // --- 2. AUTO-LOGIN VALIDATION ---
+    // This is the function needed for your Auto-Login feature
+    suspend fun validateSession(): Boolean {
+        val access = getAccessToken() ?: return false
+        val apiKey = getApiKey() ?: return false
+        val localIp = getLocalIp() ?: return false
+        val publicIp = getPublicIp() ?: return false
+        val macAddress = getMacAddress() ?: return false
+
+        val bearer = "Bearer $access"
+
+        return try {
+            val response = api.getProfile(
+                auth = bearer,
+                apiKey = apiKey,
+                localIp = localIp,
+                publicIp = publicIp,
+                macAddress = macAddress
+            )
+            // If status is true, the token is valid
+            response.isSuccessful && (response.body()?.status == true)
+        } catch (e: Exception) {
+            Log.e("SmartAPI_SESSION", "Session validation failed: ${e.localizedMessage}")
+            false
+        }
+    }
+
+    // --- 3. CREDENTIAL MANAGEMENT ---
     fun saveTokens(loginData: LoginResponse?) {
         loginData?.data?.jwtToken?.let { prefs.saveString(KEY_ACCESS, it) }
         loginData?.data?.refreshToken?.let { prefs.saveString(KEY_REFRESH, it) }
         loginData?.data?.feedToken?.let { prefs.saveString(KEY_FEED, it) }
     }
 
-    fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
-    fun getFeedToken(): String? = prefs.getString(KEY_FEED)
-
     fun saveCredentials(
         clientCode: String,
-        password: String, // Your MPIN
+        password: String,
         apiKey: String,
         localIp: String,
         publicIp: String,
@@ -128,6 +148,8 @@ class NiftyRepository @Inject constructor(
         prefs.saveString(KEY_MAC_ADDRESS, macAddress)
     }
 
+    fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
+    fun getFeedToken(): String? = prefs.getString(KEY_FEED)
     fun getClientCode(): String? = prefs.getString(KEY_CLIENT)
     fun getApiKey(): String? = prefs.getString(KEY_APIKEY)
     fun getPassword(): String? = prefs.getString(KEY_PASSWORD)
@@ -135,11 +157,9 @@ class NiftyRepository @Inject constructor(
     fun getPublicIp(): String? = prefs.getString(KEY_PUBLIC_IP)
     fun getMacAddress(): String? = prefs.getString(KEY_MAC_ADDRESS)
 
-    // --- (End of functions copied from your file) ---
 
-
-    /** Fetch live quote for an instrument token */
-    // ✅ THIS IS THE UPDATED FUNCTION
+    // --- 4. QUOTE FETCHING ---
+    // This uses the fixed QuoteRequest object to prevent crashes
     suspend fun getQuoteForToken(token: String): ApiResult<InstrumentQuote> {
         val access = getAccessToken() ?: return ApiResult.Error("No access token found.")
         val apiKey = getApiKey() ?: return ApiResult.Error("No apiKey found.")
@@ -149,7 +169,7 @@ class NiftyRepository @Inject constructor(
 
         val bearer = "Bearer $access"
 
-        // 3. ✅ Create the new request BODY OBJECT
+        // Create the QuoteRequest Object
         val exchangeTokens = ExchangeTokens(nse = listOf(token))
         val body = QuoteRequest(
             mode = "FULL",
@@ -157,14 +177,13 @@ class NiftyRepository @Inject constructor(
         )
 
         try {
-            // 4. ✅ Call the API with the new object
             val resp: Response<QuoteResponse> = api.getQuote(
                 auth = bearer,
                 apiKey = apiKey,
                 localIp = localIp,
                 publicIp = publicIp,
                 macAddress = macAddress,
-                body = body // <-- This is now a QuoteRequest object
+                body = body
             )
 
             if (resp.isSuccessful) {

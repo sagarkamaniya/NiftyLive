@@ -83,4 +83,19 @@ data class ExchangeTokens(
     // You can add other exchanges here later if needed
     // @Json(name = "BSE") val bse: List<String>? = null
 )
+// ... (Your existing models) ...
+
+// ✅ NEW: Profile Response for session validation
+@JsonClass(generateAdapter = true)
+data class ProfileResponse(
+    @Json(name = "status") val status: Boolean? = null,
+    @Json(name = "message") val message: String? = null,
+    @Json(name = "data") val data: ProfileData? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ProfileData(
+    @Json(name = "clientcode") val clientCode: String? = null,
+    @Json(name = "name") val name: String? = null
+)
 

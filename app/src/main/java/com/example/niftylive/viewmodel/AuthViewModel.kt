@@ -26,7 +26,34 @@ class AuthViewModel @Inject constructor(
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState
 
-    // ✅ UPDATED LOGIN FUNCTION
+    // ✅ NEW: Check session immediately when the ViewModel starts
+    init {
+        checkAutoLogin()
+    }
+
+    // ✅ NEW: Logic for Auto-Login
+    private fun checkAutoLogin() {
+        viewModelScope.launch {
+            // 1. If we have no saved token, do nothing (stay in Idle state)
+            if (repository.getAccessToken() == null) return@launch
+
+            // 2. Show loading while we validate
+            _authState.value = AuthState.Loading
+            
+            // 3. Verify if the token is still valid with Angel One (call getProfile)
+            val isValid = repository.validateSession()
+            
+            if (isValid) {
+                // 4. Token is good! Auto-login successfully.
+                _authState.value = AuthState.Success("Welcome back!")
+            } else {
+                // 5. Token expired or invalid. Reset to Idle so user can log in.
+                _authState.value = AuthState.Idle
+            }
+        }
+    }
+
+    // --- Existing Login Logic (Unchanged) ---
     fun login(totp: String) {
         if (totp.isBlank() || totp.length < 6) {
             _authState.value = AuthState.Error("A valid 6-digit TOTP is required")
@@ -75,7 +102,6 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    // ✅ NEW FUNCTION FOR YOUR SETTINGS SCREEN
     fun saveStaticCredentials(
         clientCode: String,
         password: String,
