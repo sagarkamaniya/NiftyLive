@@ -24,7 +24,7 @@ fun NavGraph(
     NavHost(
         navController = navController,
         // ✅ Sets the "Settings" screen as the first screen
-        startDestination = Routes.SETTINGS
+        startDestination = Routes.LOGIN
     ) {
         composable(Routes.LOGIN) {
             LoginScreen(
