@@ -130,6 +130,7 @@ class NiftyRepository @Inject constructor(
 
         try {
             val resp = api.getQuote("Bearer $access", apiKey, localIp, publicIp, macAddress, body)
+
             if (resp.isSuccessful) {
                 val quote = resp.body()?.data?.fetched?.firstOrNull()
                 return if (quote != null) ApiResult.Success(quote) else ApiResult.Error("Empty list")
@@ -141,7 +142,7 @@ class NiftyRepository @Inject constructor(
         }
     }
 
-    // ✅ 5. FETCH HOLDINGS (With Debug Logging)
+    // ✅ 5. UPDATED: FETCH HOLDINGS
     suspend fun getHoldings(): ApiResult<List<Holding>> {
         val access = getAccessToken() ?: return ApiResult.Error("No access token")
         val apiKey = getApiKey() ?: return ApiResult.Error("No apiKey")
@@ -152,15 +153,13 @@ class NiftyRepository @Inject constructor(
         try {
             val resp = api.getHoldings("Bearer $access", apiKey, localIp, publicIp, macAddress)
 
-            // 🔍 IMPORTANT: Check this log if you still get "No Holdings Found"
             if (resp.isSuccessful) {
-                Log.d("SmartAPI_HOLDING_RAW", "Raw Response: ${resp.body()}")
-            } else {
-                Log.e("SmartAPI_HOLDING_ERR", "Error Body: ${resp.errorBody()?.string()}")
-            }
-
-            if (resp.isSuccessful) {
-                val list = resp.body()?.data ?: emptyList()
+                // Log raw response if needed
+                Log.d("SmartAPI_HOLDING_RAW", "Raw: ${resp.body()}")
+                
+                // ✅ FIX: Access 'data', THEN 'holdings'
+                val list = resp.body()?.data?.holdings ?: emptyList()
+                
                 return ApiResult.Success(list)
             } else {
                 return ApiResult.Error(resp.errorBody()?.string() ?: "Unknown Error")

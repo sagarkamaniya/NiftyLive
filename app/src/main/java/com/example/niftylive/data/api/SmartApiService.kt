@@ -1,6 +1,6 @@
 package com.example.niftylive.data.api
 
-import com.example.niftylive.data.model.HoldingResponse // ✅
+import com.example.niftylive.data.model.HoldingResponse
 import com.example.niftylive.data.model.LoginResponse
 import com.example.niftylive.data.model.ProfileResponse
 import com.example.niftylive.data.model.QuoteRequest
@@ -30,6 +30,7 @@ interface SmartApiService {
         @Body body: Map<String, String>
     ): Response<LoginResponse>
 
+    
     // --- Get Quote ---
     @Headers(
         "Accept: application/json",
@@ -47,7 +48,8 @@ interface SmartApiService {
         @Body body: QuoteRequest
     ): Response<QuoteResponse>
 
-    // --- Get Profile ---
+
+    // --- Get Profile (Auto-Login) ---
     @Headers(
         "Accept: application/json",
         "X-UserType: USER",
@@ -62,7 +64,8 @@ interface SmartApiService {
         @Header("X-MACAddress") macAddress: String
     ): Response<ProfileResponse>
 
-    // ✅ NEW: Get Portfolio Holdings
+
+    // --- Get Portfolio Holdings ---
     @Headers(
         "Accept: application/json",
         "X-UserType: USER",
