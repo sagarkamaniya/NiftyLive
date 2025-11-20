@@ -1,6 +1,6 @@
 package com.example.niftylive.data.api
 
-import com.example.niftylive.data.model.HoldingResponse
+import com.example.niftylive.data.model.HoldingResponse // ✅
 import com.example.niftylive.data.model.LoginResponse
 import com.example.niftylive.data.model.ProfileResponse
 import com.example.niftylive.data.model.QuoteRequest
@@ -30,37 +30,7 @@ interface SmartApiService {
         @Body body: Map<String, String>
     ): Response<LoginResponse>
 
-    // --- Get Profile (Auto-Login) ---
-    @Headers(
-        "Accept: application/json",
-        "X-UserType: USER",
-        "X-SourceID: WEB"
-    )
-    @GET("/rest/secure/angelbroking/user/v1/getProfile")
-    suspend fun getProfile(
-        @Header("Authorization") auth: String,
-        @Header("X-PrivateKey") apiKey: String,
-        @Header("X-ClientLocalIP") localIp: String,
-        @Header("X-ClientPublicIP") publicIp: String,
-        @Header("X-MACAddress") macAddress: String
-    ): Response<ProfileResponse>
-
-    // --- Get Portfolio Holdings (NEW) ---
-    @Headers(
-        "Accept: application/json",
-        "X-UserType: USER",
-        "X-SourceID: WEB"
-    )
-    @GET("/rest/secure/angelbroking/portfolio/v1/getAllHolding")
-    suspend fun getHoldings(
-        @Header("Authorization") auth: String,
-        @Header("X-PrivateKey") apiKey: String,
-        @Header("X-ClientLocalIP") localIp: String,
-        @Header("X-ClientPublicIP") publicIp: String,
-        @Header("X-MACAddress") macAddress: String
-    ): Response<HoldingResponse>
-
-    // --- Get Quote (Still here if you need it later) ---
+    // --- Get Quote ---
     @Headers(
         "Accept: application/json",
         "X-UserType: USER",
@@ -76,4 +46,34 @@ interface SmartApiService {
         @Header("X-MACAddress") macAddress: String,
         @Body body: QuoteRequest
     ): Response<QuoteResponse>
+
+    // --- Get Profile ---
+    @Headers(
+        "Accept: application/json",
+        "X-UserType: USER",
+        "X-SourceID: WEB"
+    )
+    @GET("/rest/secure/angelbroking/user/v1/getProfile")
+    suspend fun getProfile(
+        @Header("Authorization") auth: String,
+        @Header("X-PrivateKey") apiKey: String,
+        @Header("X-ClientLocalIP") localIp: String,
+        @Header("X-ClientPublicIP") publicIp: String,
+        @Header("X-MACAddress") macAddress: String
+    ): Response<ProfileResponse>
+
+    // ✅ NEW: Get Portfolio Holdings
+    @Headers(
+        "Accept: application/json",
+        "X-UserType: USER",
+        "X-SourceID: WEB"
+    )
+    @GET("/rest/secure/angelbroking/portfolio/v1/getAllHolding")
+    suspend fun getHoldings(
+        @Header("Authorization") auth: String,
+        @Header("X-PrivateKey") apiKey: String,
+        @Header("X-ClientLocalIP") localIp: String,
+        @Header("X-ClientPublicIP") publicIp: String,
+        @Header("X-MACAddress") macAddress: String
+    ): Response<HoldingResponse>
 }
