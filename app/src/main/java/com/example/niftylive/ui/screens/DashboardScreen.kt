@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.niftylive.viewmodel.DashboardState
@@ -32,10 +33,15 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
         viewModel.startDataPolling()
     }
 
-    // ✅ DEFINE STYLES WITH TABULAR NUMERALS (tnum)
-    // This ensures '1' takes the same space as '9', preventing the jumping effect.
-    val priceStyle = MaterialTheme.typography.displaySmall.copy(fontFeatureSettings = "tnum")
-    val changeStyle = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum")
+    // Use Monospace font to ensure every digit has the exact same width
+    val priceStyle = MaterialTheme.typography.displaySmall.copy(
+        fontFamily = FontFamily.Monospace,
+        fontFeatureSettings = "tnum"
+    )
+    val changeStyle = MaterialTheme.typography.bodyLarge.copy(
+        fontFamily = FontFamily.Monospace,
+        fontFeatureSettings = "tnum"
+    )
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -47,7 +53,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
             when (val currentState = state) {
                 is DashboardState.Idle -> {
                     Text(
-                        text = "Welcome to NiftyLive 📈",
+                        text = "Welcome to NiftyLive ",
                         style = MaterialTheme.typography.headlineMedium
                     )
                 }
@@ -70,19 +76,21 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                         
                         Spacer(Modifier.height(8.dp))
                         
-                        // ✅ USE THE FIXED WIDTH STYLE HERE
+                        // Price: Formatted to 2 decimals (e.g., "25432.10")
                         TickerText(
-                            text = "₹${String.format("%.2f", quote.ltp ?: 0.0)}", 
-                            style = priceStyle, // Using 'tnum' style
+                            text = "${String.format("%.2f", quote.ltp ?: 0.0)}", 
+                            style = priceStyle, 
                             color = if ((quote.netChange ?: 0.0) >= 0) Color(0xFF00C853) else Color(0xFFD50000)
                         )
                         
                         Spacer(Modifier.height(8.dp))
                         
-                        // ✅ USE THE FIXED WIDTH STYLE HERE TOO
+                        // Change & Percent:  NOW FORMATTED TO 2 DECIMALS
+                        // Example: "Change: 120.50 (0.45%)"
+                        // This prevents the text from jumping when ".5" becomes ".50"
                         Text(
-                            text = "Change: ${quote.netChange} (${quote.percentChange}%)",
-                            style = changeStyle // Using 'tnum' style
+                            text = "Change: ${String.format("%.2f", quote.netChange ?: 0.0)} (${String.format("%.2f", quote.percentChange ?: 0.0)}%)",
+                            style = changeStyle
                         )
                     }
                 }
