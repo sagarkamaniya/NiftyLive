@@ -32,6 +32,11 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
         viewModel.startDataPolling()
     }
 
+    // ✅ DEFINE STYLES WITH TABULAR NUMERALS (tnum)
+    // This ensures '1' takes the same space as '9', preventing the jumping effect.
+    val priceStyle = MaterialTheme.typography.displaySmall.copy(fontFeatureSettings = "tnum")
+    val changeStyle = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum")
+
     Surface(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
@@ -42,7 +47,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
             when (val currentState = state) {
                 is DashboardState.Idle -> {
                     Text(
-                        text = "Welcome to NiftyLive ",
+                        text = "Welcome to NiftyLive 📈",
                         style = MaterialTheme.typography.headlineMedium
                     )
                 }
@@ -65,18 +70,19 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                         
                         Spacer(Modifier.height(8.dp))
                         
-                        //  FIXED: Formatted to always show 2 decimal places (e.g., 26162.20)
+                        // ✅ USE THE FIXED WIDTH STYLE HERE
                         TickerText(
-                            text = "${String.format("%.2f", quote.ltp ?: 0.0)}", 
-                            style = MaterialTheme.typography.displaySmall,
+                            text = "₹${String.format("%.2f", quote.ltp ?: 0.0)}", 
+                            style = priceStyle, // Using 'tnum' style
                             color = if ((quote.netChange ?: 0.0) >= 0) Color(0xFF00C853) else Color(0xFFD50000)
                         )
                         
                         Spacer(Modifier.height(8.dp))
                         
+                        // ✅ USE THE FIXED WIDTH STYLE HERE TOO
                         Text(
                             text = "Change: ${quote.netChange} (${quote.percentChange}%)",
-                            style = MaterialTheme.typography.bodyLarge
+                            style = changeStyle // Using 'tnum' style
                         )
                     }
                 }
