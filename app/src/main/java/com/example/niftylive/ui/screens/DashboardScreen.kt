@@ -34,14 +34,15 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Box(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
             when (val currentState = state) {
                 is DashboardState.Idle -> {
                     Text(
-                        text = "Welcome to NiftyLive 📈",
+                        text = "Welcome to NiftyLive ",
                         style = MaterialTheme.typography.headlineMedium
                     )
                 }
@@ -64,9 +65,9 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                         
                         Spacer(Modifier.height(8.dp))
                         
-                        // This uses your TickerText for animation
+                        //  FIXED: Formatted to always show 2 decimal places (e.g., 26162.20)
                         TickerText(
-                            text = "₹${quote.ltp}", 
+                            text = "${String.format("%.2f", quote.ltp ?: 0.0)}", 
                             style = MaterialTheme.typography.displaySmall,
                             color = if ((quote.netChange ?: 0.0) >= 0) Color(0xFF00C853) else Color(0xFFD50000)
                         )
