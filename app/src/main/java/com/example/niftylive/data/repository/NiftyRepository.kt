@@ -3,6 +3,7 @@ package com.example.niftylive.data.repository
 import android.util.Log
 import com.example.niftylive.data.api.SmartApiService
 import com.example.niftylive.data.model.ExchangeTokens
+import com.example.niftylive.data.model.Holding
 import com.example.niftylive.data.model.InstrumentQuote
 import com.example.niftylive.data.model.LoginResponse
 import com.example.niftylive.data.model.QuoteRequest
@@ -35,7 +36,7 @@ class NiftyRepository @Inject constructor(
         const val KEY_MAC_ADDRESS = "mac_address"
     }
 
-    // --- 1. LOGIN FUNCTION ---
+    // --- LOGIN ---
     suspend fun loginWithCredentials(
         clientCode: String,
         password: String,
@@ -98,8 +99,7 @@ class NiftyRepository @Inject constructor(
         }
     }
 
-    // --- 2. AUTO-LOGIN VALIDATION ---
-    // This is the function needed for your Auto-Login feature
+    // --- AUTO-LOGIN ---
     suspend fun validateSession(): Boolean {
         val access = getAccessToken() ?: return false
         val apiKey = getApiKey() ?: return false
@@ -117,7 +117,6 @@ class NiftyRepository @Inject constructor(
                 publicIp = publicIp,
                 macAddress = macAddress
             )
-            // If status is true, the token is valid
             response.isSuccessful && (response.body()?.status == true)
         } catch (e: Exception) {
             Log.e("SmartAPI_SESSION", "Session validation failed: ${e.localizedMessage}")
@@ -125,7 +124,7 @@ class NiftyRepository @Inject constructor(
         }
     }
 
-    // --- 3. CREDENTIAL MANAGEMENT ---
+    // --- STORAGE ---
     fun saveTokens(loginData: LoginResponse?) {
         loginData?.data?.jwtToken?.let { prefs.saveString(KEY_ACCESS, it) }
         loginData?.data?.refreshToken?.let { prefs.saveString(KEY_REFRESH, it) }
@@ -157,10 +156,8 @@ class NiftyRepository @Inject constructor(
     fun getPublicIp(): String? = prefs.getString(KEY_PUBLIC_IP)
     fun getMacAddress(): String? = prefs.getString(KEY_MAC_ADDRESS)
 
-
-    // --- 4. QUOTE FETCHING ---
-    // This uses the fixed QuoteRequest object to prevent crashes
-    suspend fun getQuoteForToken(token: String): ApiResult<InstrumentQuote> {
+    // --- PORTFOLIO (NEW) ---
+    suspend fun getHoldings(): ApiResult<List<Holding>> {
         val access = getAccessToken() ?: return ApiResult.Error("No access token found.")
         val apiKey = getApiKey() ?: return ApiResult.Error("No apiKey found.")
         val localIp = getLocalIp() ?: return ApiResult.Error("No localIp found.")
@@ -169,39 +166,48 @@ class NiftyRepository @Inject constructor(
 
         val bearer = "Bearer $access"
 
-        // Create the QuoteRequest Object
+        try {
+            val resp = api.getHoldings(bearer, apiKey, localIp, publicIp, macAddress)
+
+            if (resp.isSuccessful) {
+                val list = resp.body()?.data ?: emptyList()
+                return ApiResult.Success(list)
+            } else {
+                val errorBody = resp.errorBody()?.string() ?: "Unknown Error"
+                Log.e("SmartAPI_PORTFOLIO", "Error: $errorBody")
+                return ApiResult.Error(errorBody)
+            }
+        } catch (e: Exception) {
+            Log.e("SmartAPI_PORTFOLIO_ERR", "Exception: ${e.localizedMessage}")
+            return ApiResult.Error("Exception: ${e.localizedMessage}")
+        }
+    }
+
+    // --- QUOTE (Kept for reference) ---
+    suspend fun getQuoteForToken(token: String): ApiResult<InstrumentQuote> {
+        val access = getAccessToken() ?: return ApiResult.Error("No access token")
+        val apiKey = getApiKey() ?: return ApiResult.Error("No apiKey")
+        val localIp = getLocalIp() ?: return ApiResult.Error("No localIp")
+        val publicIp = getPublicIp() ?: return ApiResult.Error("No publicIp")
+        val macAddress = getMacAddress() ?: return ApiResult.Error("No macAddress")
+
+        val bearer = "Bearer $access"
+
         val exchangeTokens = ExchangeTokens(nse = listOf(token))
-        val body = QuoteRequest(
-            mode = "FULL",
-            exchangeTokens = exchangeTokens
-        )
+        val body = QuoteRequest(mode = "FULL", exchangeTokens = exchangeTokens)
 
         try {
-            val resp: Response<QuoteResponse> = api.getQuote(
-                auth = bearer,
-                apiKey = apiKey,
-                localIp = localIp,
-                publicIp = publicIp,
-                macAddress = macAddress,
-                body = body
-            )
+            val resp = api.getQuote(bearer, apiKey, localIp, publicIp, macAddress, body)
 
             if (resp.isSuccessful) {
                 val quote = resp.body()?.data?.fetched?.firstOrNull()
-                if (quote != null) {
-                    return ApiResult.Success(quote)
-                } else {
-                    return ApiResult.Error("API returned success but 'fetched' list was empty.")
-                }
+                if (quote != null) return ApiResult.Success(quote)
+                else return ApiResult.Error("API success but empty list")
             } else {
-                val errorBodyString = resp.errorBody()?.string() ?: "Unknown HTTP error"
-                Log.e("SmartAPI_QUOTE_ERROR", "Error body: $errorBodyString")
-                return ApiResult.Error(errorBodyString)
+                return ApiResult.Error(resp.errorBody()?.string() ?: "Unknown error")
             }
-
         } catch (e: Exception) {
-            Log.e("SmartAPI_QUOTE_ERR", "Exception: ${e.localizedMessage}", e)
-            return ApiResult.Error("Exception: ${e.localizedMessage ?: "Unknown Error"}")
+            return ApiResult.Error("Exception: ${e.localizedMessage}")
         }
     }
 }

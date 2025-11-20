@@ -3,8 +3,7 @@ package com.example.niftylive.data.model
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-// --- LOGIN MODELS (Already updated, but good to have in one file) ---
-
+// --- LOGIN MODELS ---
 @JsonClass(generateAdapter = true)
 data class LoginResponse(
     @Json(name = "status") val status: Boolean? = null,
@@ -20,10 +19,42 @@ data class LoginData(
     @Json(name = "feedToken") val feedToken: String? = null
 )
 
+// --- PROFILE MODEL ---
+@JsonClass(generateAdapter = true)
+data class ProfileResponse(
+    @Json(name = "status") val status: Boolean? = null,
+    @Json(name = "message") val message: String? = null,
+    @Json(name = "data") val data: ProfileData? = null
+)
 
-// --- QUOTE MODELS (New and Updated) ---
+@JsonClass(generateAdapter = true)
+data class ProfileData(
+    @Json(name = "clientcode") val clientCode: String? = null,
+    @Json(name = "name") val name: String? = null
+)
 
-// ✅ This is the main, top-level response for the quote API
+// --- PORTFOLIO MODELS (NEW) ---
+@JsonClass(generateAdapter = true)
+data class HoldingResponse(
+    @Json(name = "status") val status: Boolean? = null,
+    @Json(name = "message") val message: String? = null,
+    @Json(name = "data") val data: List<Holding>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class Holding(
+    @Json(name = "tradingsymbol") val tradingSymbol: String? = null,
+    @Json(name = "symboltoken") val symbolToken: String? = null,
+    @Json(name = "exchange") val exchange: String? = null,
+    @Json(name = "isin") val isin: String? = null,
+    @Json(name = "quantity") val quantity: Long? = null,
+    @Json(name = "averageprice") val averagePrice: Double? = null,
+    @Json(name = "ltp") val ltp: Double? = null,
+    @Json(name = "pnl") val pnl: Double? = null,
+    @Json(name = "product") val product: String? = null
+)
+
+// --- QUOTE MODELS (Keeping these for reference, though not used in Dashboard now) ---
 @JsonClass(generateAdapter = true)
 data class QuoteResponse(
     @Json(name = "status") val status: Boolean? = null,
@@ -32,15 +63,12 @@ data class QuoteResponse(
     @Json(name = "data") val data: MarketData? = null
 )
 
-// ✅ This holds the 'fetched' and 'unfetched' lists
 @JsonClass(generateAdapter = true)
 data class MarketData(
     @Json(name = "fetched") val fetched: List<InstrumentQuote>,
     @Json(name = "unfetched") val unfetched: List<UnfetchedQuote>? = null
 )
 
-// ✅ This is the actual data for one instrument (replaces your old model)
-// Note the new field names (ltp, percentChange, etc.)
 @JsonClass(generateAdapter = true)
 data class InstrumentQuote(
     @Json(name = "exchange") val exchange: String? = null,
@@ -59,7 +87,6 @@ data class InstrumentQuote(
     @Json(name = "52WeekLow") val fiftyTwoWeekLow: Double? = null
 )
 
-// ✅ This is for any symbols that failed to fetch
 @JsonClass(generateAdapter = true)
 data class UnfetchedQuote(
     @Json(name = "exchange") val exchange: String? = null,
@@ -67,9 +94,6 @@ data class UnfetchedQuote(
     @Json(name = "message") val message: String? = null,
     @Json(name = "errorCode") val errorCode: String? = null
 )
-// ... (Your LoginResponse, QuoteResponse, etc. classes are already here) ...
-
-// --- QUOTE REQUEST MODELS ---
 
 @JsonClass(generateAdapter = true)
 data class QuoteRequest(
@@ -80,22 +104,4 @@ data class QuoteRequest(
 @JsonClass(generateAdapter = true)
 data class ExchangeTokens(
     @Json(name = "NSE") val nse: List<String>
-    // You can add other exchanges here later if needed
-    // @Json(name = "BSE") val bse: List<String>? = null
 )
-// ... (Your existing models) ...
-
-// ✅ NEW: Profile Response for session validation
-@JsonClass(generateAdapter = true)
-data class ProfileResponse(
-    @Json(name = "status") val status: Boolean? = null,
-    @Json(name = "message") val message: String? = null,
-    @Json(name = "data") val data: ProfileData? = null
-)
-
-@JsonClass(generateAdapter = true)
-data class ProfileData(
-    @Json(name = "clientcode") val clientCode: String? = null,
-    @Json(name = "name") val name: String? = null
-)
-
