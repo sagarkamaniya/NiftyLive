@@ -35,22 +35,21 @@ class DashboardViewModel @Inject constructor(
     private val _state = MutableStateFlow<DashboardState>(DashboardState.Idle)
     val state = _state.asStateFlow()
 
-    // Internal cache to store the latest data from different loops
-    private var myStaticHoldings: List<Holding> = emptyList() // The list from "getHoldings"
-    private var latestLiveHoldings: List<Holding> = emptyList() // The list with live prices
+    // Internal cache
+    private var myStaticHoldings: List<Holding> = emptyList()
+    private var latestLiveHoldings: List<Holding> = emptyList()
     private var latestNifty: InstrumentQuote? = null
     private var latestFunds: String = "Loading..."
 
     fun startDashboard() {
         _state.value = DashboardState.Loading
 
-        // --- LOOP 1: Live Prices (Quotes & Portfolio) ---
+        // --- LOOP 1: Live Prices ---
         viewModelScope.launch {
-            // 1. Fetch Portfolio ONCE to get the list of stocks you own
+            // 1. Fetch Portfolio ONCE
             when (val result = repository.getHoldings()) {
                 is ApiResult.Success -> {
                     myStaticHoldings = result.data
-                    // Initialize live holdings with static data initially
                     latestLiveHoldings = result.data
                 }
                 is ApiResult.Error -> {
@@ -64,12 +63,10 @@ class DashboardViewModel @Inject constructor(
                 val niftyToken = "99926000"
                 val allTokens = mutableListOf(niftyToken)
 
-                // Add all portfolio tokens to the list
                 myStaticHoldings.forEach { holding ->
                     holding.symbolToken?.let { allTokens.add(it) }
                 }
 
-                // 3. Fetch LIVE prices for EVERYTHING in one request
                 when (val result = repository.getQuotesForList(allTokens)) {
                     is ApiResult.Success -> {
                         val liveQuotes = result.data
@@ -86,7 +83,6 @@ class DashboardViewModel @Inject constructor(
                                 val avgPrice = staticHolding.averagePrice ?: 0.0
                                 val qty = staticHolding.quantity ?: 0
 
-                                // Calculate Live P&L
                                 val livePnl = (currentLtp - avgPrice) * qty
 
                                 staticHolding.copy(ltp = currentLtp, pnl = livePnl)
@@ -94,12 +90,10 @@ class DashboardViewModel @Inject constructor(
                                 staticHolding
                             }
                         }
-
-                        // Update UI
                         emitState()
                     }
                     is ApiResult.Error -> {
-                        // Log error, keep showing old data
+                        // Log error
                     }
                 }
                 delay(1000)
@@ -114,16 +108,13 @@ class DashboardViewModel @Inject constructor(
                         latestFunds = result.data
                         emitState()
                     }
-                    is ApiResult.Error -> {
-                        // Keep old funds value on error
-                    }
+                    is ApiResult.Error -> { }
                 }
                 delay(5000)
             }
         }
     }
 
-    // Helper to combine all data into one state
     private fun emitState() {
         _state.value = DashboardState.Success(
             niftyQuote = latestNifty,
@@ -135,8 +126,10 @@ class DashboardViewModel @Inject constructor(
     fun placeTrade(symbol: String, token: String, type: String, qty: String) {
         viewModelScope.launch {
             val request = OrderRequest(
-                tradingsymbol = symbol,
-                symboltoken = token,
+                // ✅ FIXED: Use 'tradingSymbol' (camelCase) not 'tradingsymbol'
+                tradingSymbol = symbol,
+                // ✅ FIXED: Use 'symbolToken' (camelCase) not 'symboltoken'
+                symbolToken = token,
                 transactionType = type,
                 exchange = "NSE",
                 orderType = "MARKET",
@@ -147,7 +140,6 @@ class DashboardViewModel @Inject constructor(
 
             if (result is ApiResult.Success) {
                 Log.d("TRADE", "Order Placed: ${result.data}")
-                // Optional: Refresh funds immediately after trade
             } else if (result is ApiResult.Error) {
                 Log.e("TRADE", "Failed: ${result.message}")
             }
