@@ -111,3 +111,47 @@ data class Holding(
     @Json(name = "profitandloss") val pnl: Double? = null, 
     @Json(name = "product") val product: String? = null
 )
+// ... (Existing models) ...
+
+// ✅ NEW: FUNDS (RMS) MODELS
+@JsonClass(generateAdapter = true)
+data class RMSResponse(
+    @Json(name = "status") val status: Boolean? = null,
+    @Json(name = "message") val message: String? = null,
+    @Json(name = "errorcode") val errorcode: String? = null,
+    @Json(name = "data") val data: RMSData? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RMSData(
+    @Json(name = "net") val net: String? = null, // Net Available Funds
+    @Json(name = "availablecash") val availableCash: String? = null
+)
+
+// ✅ NEW: ORDER PLACEMENT MODELS
+@JsonClass(generateAdapter = true)
+data class OrderRequest(
+    @Json(name = "variety") val variety: String = "NORMAL",
+    @Json(name = "tradingsymbol") val tradingSymbol: String,
+    @Json(name = "symboltoken") val symbolToken: String,
+    @Json(name = "transactiontype") val transactionType: String, // "BUY" or "SELL"
+    @Json(name = "exchange") val exchange: String, // "NSE" or "NFO"
+    @Json(name = "ordertype") val orderType: String, // "MARKET" or "LIMIT"
+    @Json(name = "producttype") val productType: String, // "DELIVERY", "CARRYFORWARD", "INTRADAY"
+    @Json(name = "duration") val duration: String = "DAY",
+    @Json(name = "price") val price: String = "0",
+    @Json(name = "quantity") val quantity: String
+)
+
+@JsonClass(generateAdapter = true)
+data class OrderResponse(
+    @Json(name = "status") val status: Boolean? = null,
+    @Json(name = "message") val message: String? = null,
+    @Json(name = "data") val data: OrderResponseData? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class OrderResponseData(
+    @Json(name = "orderid") val orderId: String? = null,
+    @Json(name = "uniqueorderid") val uniqueOrderId: String? = null
+)

@@ -5,6 +5,9 @@ import com.example.niftylive.data.model.LoginResponse
 import com.example.niftylive.data.model.ProfileResponse
 import com.example.niftylive.data.model.QuoteRequest
 import com.example.niftylive.data.model.QuoteResponse
+import com.example.niftylive.data.model.RMSResponse // ✅ FIXED: Added 'import'
+import com.example.niftylive.data.model.OrderRequest
+import com.example.niftylive.data.model.OrderResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -79,4 +82,36 @@ interface SmartApiService {
         @Header("X-ClientPublicIP") publicIp: String,
         @Header("X-MACAddress") macAddress: String
     ): Response<HoldingResponse>
+
+    // ✅ NEW: Get Funds (RMS)
+    @Headers(
+        "Accept: application/json",
+        "X-UserType: USER",
+        "X-SourceID: WEB"
+    )
+    @GET("/rest/secure/angelbroking/user/v1/getRMS")
+    suspend fun getRMS(
+        @Header("Authorization") auth: String,
+        @Header("X-PrivateKey") apiKey: String,
+        @Header("X-ClientLocalIP") localIp: String,
+        @Header("X-ClientPublicIP") publicIp: String,
+        @Header("X-MACAddress") macAddress: String
+    ): Response<RMSResponse>
+
+    // ✅ NEW: Place Order
+    @Headers(
+        "Content-Type: application/json",
+        "Accept: application/json",
+        "X-UserType: USER",
+        "X-SourceID: WEB"
+    )
+    @POST("/rest/secure/angelbroking/order/v1/placeOrder")
+    suspend fun placeOrder(
+        @Header("Authorization") auth: String,
+        @Header("X-PrivateKey") apiKey: String,
+        @Header("X-ClientLocalIP") localIp: String,
+        @Header("X-ClientPublicIP") publicIp: String,
+        @Header("X-MACAddress") macAddress: String,
+        @Body body: OrderRequest
+    ): Response<OrderResponse>
 }

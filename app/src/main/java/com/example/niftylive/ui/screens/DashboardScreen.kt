@@ -26,11 +26,11 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
     LaunchedEffect(Unit) {
         focusManager.clearFocus()
         keyboardController?.hide()
-        // ✅ Call the new combined function
+        // Call the combined start function
         viewModel.startDashboard()
     }
 
-    // Styles
+    // Styles for Monospace numbers
     val priceStyle = MaterialTheme.typography.displaySmall.copy(
         fontFamily = FontFamily.Monospace,
         fontFeatureSettings = "tnum"
@@ -53,13 +53,14 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                 is DashboardState.Success -> {
                     val nifty = currentState.niftyQuote
                     val holdings = currentState.holdings
+                    val funds = currentState.funds // ✅ Get Funds from state
 
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // 1. THE NIFTY 50 CARD (Header)
+                        // --- 1. NIFTY 50 CARD ---
                         item {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
@@ -91,7 +92,29 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                             }
                         }
 
-                        // 2. SECTION TITLE
+                        // --- 2. FUNDS DISPLAY (NEW) ---
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                // Light blue background for funds
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Available Funds:", style = MaterialTheme.typography.titleMedium)
+                                    // Show funds in Green
+                                    Text(
+                                        text = "₹$funds", 
+                                        style = MaterialTheme.typography.titleMedium, 
+                                        color = Color(0xFF00C853)
+                                    )
+                                }
+                            }
+                        }
+
+                        // --- 3. SECTION TITLE ---
                         item {
                             Text(
                                 text = "Your Portfolio (${holdings.size})",
@@ -100,13 +123,14 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                             )
                         }
 
-                        // 3. PORTFOLIO ITEMS
+                        // --- 4. PORTFOLIO ITEMS ---
                         if (holdings.isEmpty()) {
                             item { Text("No holdings found") }
                         } else {
                             items(holdings) { stock ->
                                 Card(modifier = Modifier.fillMaxWidth()) {
                                     Column(modifier = Modifier.padding(16.dp)) {
+                                        // Top Row: Name & Price
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween
@@ -115,13 +139,14 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                                                 text = stock.tradingSymbol ?: "UNKNOWN",
                                                 style = MaterialTheme.typography.titleMedium
                                             )
-                                            // Using bodyStyle for list items to keep them aligned
                                             TickerText(
                                                 text = "₹${String.format("%.2f", stock.ltp ?: 0.0)}",
                                                 style = bodyStyle
                                             )
                                         }
                                         Spacer(modifier = Modifier.height(4.dp))
+                                        
+                                        // Middle Row: Qty & P&L
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween
@@ -132,6 +157,39 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                                                 style = bodyStyle,
                                                 color = if ((stock.pnl ?: 0.0) >= 0) Color(0xFF00C853) else Color(0xFFD50000)
                                             )
+                                        }
+
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        // ✅ NEW: BUY / SELL BUTTONS
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            // BUY BUTTON
+                                            Button(
+                                                onClick = { 
+                                                    viewModel.placeTrade(
+                                                        symbol = stock.tradingSymbol ?: "", 
+                                                        token = stock.symbolToken ?: "", 
+                                                        type = "BUY", 
+                                                        qty = "1" // Default qty 1 for testing
+                                                    ) 
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C853)),
+                                                modifier = Modifier.weight(1f)
+                                            ) { Text("BUY") }
+                                            
+                                            // SELL BUTTON
+                                            Button(
+                                                onClick = { 
+                                                    viewModel.placeTrade(
+                                                        symbol = stock.tradingSymbol ?: "", 
+                                                        token = stock.symbolToken ?: "", 
+                                                        type = "SELL", 
+                                                        qty = "1"
+                                                    ) 
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD50000)),
+                                                modifier = Modifier.weight(1f)
+                                            ) { Text("SELL") }
                                         }
                                     }
                                 }
