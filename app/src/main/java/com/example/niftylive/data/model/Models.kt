@@ -3,7 +3,7 @@ package com.example.niftylive.data.model
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-// --- LOGIN & QUOTE ---
+// --- LOGIN MODELS ---
 @JsonClass(generateAdapter = true)
 data class LoginResponse(
     @Json(name = "status") val status: Boolean? = null,
@@ -19,6 +19,7 @@ data class LoginData(
     @Json(name = "feedToken") val feedToken: String? = null
 )
 
+// --- QUOTE MODELS ---
 @JsonClass(generateAdapter = true)
 data class QuoteResponse(
     @Json(name = "status") val status: Boolean? = null,
@@ -49,6 +50,7 @@ data class UnfetchedQuote(
     @Json(name = "message") val message: String? = null
 )
 
+// --- QUOTE REQUEST MODELS ---
 @JsonClass(generateAdapter = true)
 data class QuoteRequest(
     @Json(name = "mode") val mode: String,
@@ -60,7 +62,7 @@ data class ExchangeTokens(
     @Json(name = "NSE") val nse: List<String>
 )
 
-// --- PROFILE ---
+// --- PROFILE MODELS ---
 @JsonClass(generateAdapter = true)
 data class ProfileResponse(
     @Json(name = "status") val status: Boolean? = null,
@@ -74,7 +76,7 @@ data class ProfileData(
     @Json(name = "name") val name: String? = null
 )
 
-// --- PORTFOLIO ---
+// --- PORTFOLIO MODELS ---
 @JsonClass(generateAdapter = true)
 data class HoldingResponse(
     @Json(name = "status") val status: Boolean? = null,
@@ -105,11 +107,11 @@ data class Holding(
     @Json(name = "quantity") val quantity: Long? = null,
     @Json(name = "averageprice") val averagePrice: Double? = null,
     @Json(name = "ltp") val ltp: Double? = null,
-    @Json(name = "profitandloss") val pnl: Double? = null,
+    @Json(name = "profitandloss") val pnl: Double? = null, 
     @Json(name = "product") val product: String? = null
 )
 
-// --- FUNDS (RMS) ---
+// --- FUNDS (RMS) MODELS ---
 @JsonClass(generateAdapter = true)
 data class RMSResponse(
     @Json(name = "status") val status: Boolean? = null,
@@ -120,7 +122,7 @@ data class RMSResponse(
 
 @JsonClass(generateAdapter = true)
 data class RMSData(
-    @Json(name = "net") val net: String? = null,
+    @Json(name = "net") val net: String? = null, // Net Available Funds
     @Json(name = "availablecash") val availableCash: String? = null
 )
 
@@ -139,15 +141,10 @@ data class OrderRequest(
     @Json(name = "quantity") val quantity: String
 )
 
+// ✅ UPDATED: 'data' is now a String (Order ID), not an Object
 @JsonClass(generateAdapter = true)
 data class OrderResponse(
     @Json(name = "status") val status: Boolean? = null,
     @Json(name = "message") val message: String? = null,
-    @Json(name = "data") val data: OrderResponseData? = null
-)
-
-@JsonClass(generateAdapter = true)
-data class OrderResponseData(
-    @Json(name = "orderid") val orderId: String? = null,
-    @Json(name = "uniqueorderid") val uniqueOrderId: String? = null
+    @Json(name = "data") val data: String? = null // <--- CHANGED TO STRING
 )

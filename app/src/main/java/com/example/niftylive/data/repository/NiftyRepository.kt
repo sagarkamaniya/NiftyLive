@@ -7,7 +7,6 @@ import com.example.niftylive.data.model.Holding
 import com.example.niftylive.data.model.InstrumentQuote
 import com.example.niftylive.data.model.LoginResponse
 import com.example.niftylive.data.model.OrderRequest
-import com.example.niftylive.data.model.OrderResponse
 import com.example.niftylive.data.model.QuoteRequest
 import com.example.niftylive.data.model.QuoteResponse
 import com.example.niftylive.utils.SecurePrefs
@@ -38,7 +37,7 @@ class NiftyRepository @Inject constructor(
         const val KEY_MAC_ADDRESS = "mac_address"
     }
 
-    // --- 1. LOGIN (Fixed variable names) ---
+    // --- 1. LOGIN ---
     suspend fun loginWithCredentials(
         clientCode: String,
         password: String,
@@ -105,21 +104,13 @@ class NiftyRepository @Inject constructor(
         loginData?.data?.feedToken?.let { prefs.saveString(KEY_FEED, it) }
     }
 
-    // Fixed variable names here too
-    fun saveCredentials(
-        clientCode: String, 
-        password: String, 
-        apiKey: String, 
-        localIp: String, 
-        publicIp: String, 
-        macAddress: String
-    ) {
-        prefs.saveString(KEY_CLIENT, clientCode)
-        prefs.saveString(KEY_PASSWORD, password)
-        prefs.saveString(KEY_APIKEY, apiKey)
-        prefs.saveString(KEY_LOCAL_IP, localIp)
-        prefs.saveString(KEY_PUBLIC_IP, publicIp)
-        prefs.saveString(KEY_MAC_ADDRESS, macAddress)
+    fun saveCredentials(cc: String, pass: String, key: String, loc: String, pub: String, mac: String) {
+        prefs.saveString(KEY_CLIENT, cc)
+        prefs.saveString(KEY_PASSWORD, pass)
+        prefs.saveString(KEY_APIKEY, key)
+        prefs.saveString(KEY_LOCAL_IP, loc)
+        prefs.saveString(KEY_PUBLIC_IP, pub)
+        prefs.saveString(KEY_MAC_ADDRESS, mac)
     }
 
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
@@ -133,18 +124,20 @@ class NiftyRepository @Inject constructor(
 
     // --- 4. FETCH HOLDINGS ---
     suspend fun getHoldings(): ApiResult<List<Holding>> {
-        val access = getAccessToken() ?: return ApiResult.Error("No token")
-        val apiKey = getApiKey() ?: return ApiResult.Error("No key")
+        val access = getAccessToken() ?: return ApiResult.Error("No access token")
+        val apiKey = getApiKey() ?: return ApiResult.Error("No apiKey")
         val localIp = getLocalIp() ?: return ApiResult.Error("No localIp")
         val publicIp = getPublicIp() ?: return ApiResult.Error("No publicIp")
         val macAddress = getMacAddress() ?: return ApiResult.Error("No macAddress")
 
         try {
             val resp = api.getHoldings("Bearer $access", apiKey, localIp, publicIp, macAddress)
+
             if (resp.isSuccessful) {
-                return ApiResult.Success(resp.body()?.data?.holdings ?: emptyList())
+                val list = resp.body()?.data?.holdings ?: emptyList()
+                return ApiResult.Success(list)
             } else {
-                return ApiResult.Error(resp.errorBody()?.string() ?: "Error")
+                return ApiResult.Error(resp.errorBody()?.string() ?: "Unknown Error")
             }
         } catch (e: Exception) {
             return ApiResult.Error("Exception: ${e.localizedMessage}")
@@ -153,17 +146,19 @@ class NiftyRepository @Inject constructor(
 
     // --- 5. FETCH LIVE QUOTES ---
     suspend fun getQuotesForList(tokens: List<String>): ApiResult<List<InstrumentQuote>> {
-        val access = getAccessToken() ?: return ApiResult.Error("No token")
-        val apiKey = getApiKey() ?: return ApiResult.Error("No key")
+        val access = getAccessToken() ?: return ApiResult.Error("No access token")
+        val apiKey = getApiKey() ?: return ApiResult.Error("No apiKey")
         val localIp = getLocalIp() ?: return ApiResult.Error("No localIp")
         val publicIp = getPublicIp() ?: return ApiResult.Error("No publicIp")
         val macAddress = getMacAddress() ?: return ApiResult.Error("No macAddress")
 
         val body = QuoteRequest("FULL", ExchangeTokens(tokens))
+
         try {
             val resp = api.getQuote("Bearer $access", apiKey, localIp, publicIp, macAddress, body)
             if (resp.isSuccessful) {
-                return ApiResult.Success(resp.body()?.data?.fetched ?: emptyList())
+                val list = resp.body()?.data?.fetched ?: emptyList()
+                return ApiResult.Success(list)
             } else {
                 return ApiResult.Error(resp.errorBody()?.string() ?: "API Error")
             }
@@ -202,7 +197,9 @@ class NiftyRepository @Inject constructor(
         try {
             val resp = api.placeOrder("Bearer $access", apiKey, localIp, publicIp, macAddress, request)
             if (resp.isSuccessful && resp.body()?.status == true) {
-                return ApiResult.Success(resp.body()?.data?.orderId ?: "Success")
+                // ✅ UPDATED: Access data directly as it is now a String
+                val orderId = resp.body()?.data ?: "Success (No ID)"
+                return ApiResult.Success(orderId)
             }
             return ApiResult.Error(resp.body()?.message ?: "Order Failed")
         } catch (e: Exception) {
