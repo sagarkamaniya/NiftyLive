@@ -7,6 +7,7 @@ import com.example.niftylive.data.model.Holding
 import com.example.niftylive.data.model.InstrumentQuote
 import com.example.niftylive.data.model.LoginResponse
 import com.example.niftylive.data.model.OrderRequest
+import com.example.niftylive.data.model.OrderResponse
 import com.example.niftylive.data.model.QuoteRequest
 import com.example.niftylive.data.model.QuoteResponse
 import com.example.niftylive.utils.SecurePrefs
@@ -37,44 +38,90 @@ class NiftyRepository @Inject constructor(
         const val KEY_MAC_ADDRESS = "mac_address"
     }
 
-    // --- LOGIN ---
-    suspend fun loginWithCredentials(cc: String, pass: String, key: String, auth: String, loc: String, pub: String, mac: String): Response<LoginResponse> {
-        val body = mapOf("clientcode" to cc, "password" to pass, "totp" to auth)
+    // --- 1. LOGIN (Fixed variable names) ---
+    suspend fun loginWithCredentials(
+        clientCode: String,
+        password: String,
+        apiKey: String,
+        authCode: String,
+        localIp: String,
+        publicIp: String,
+        macAddress: String
+    ): Response<LoginResponse> {
+
+        val body = mapOf(
+            "clientcode" to clientCode,
+            "password" to password,
+            "totp" to authCode
+        )
+
         return try {
-            val response = api.login(key, loc, pub, mac, body)
-            if (response.isSuccessful) return response
-            val errorText = response.errorBody()?.string() ?: "Error"
+            val response = api.login(apiKey, localIp, publicIp, macAddress, body)
+
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+                if (responseBody != null) {
+                    Log.d("SmartAPI_LOGIN", "✅ Success")
+                    return response
+                }
+            }
+
+            val errorText = response.errorBody()?.string() ?: "Unknown Error"
+            Log.e("SmartAPI_LOGIN_RAW", "Response: $errorText")
+
             val adapter = moshi.adapter(LoginResponse::class.java).lenient()
             val parsed = adapter.fromJson(errorText)
-            if (parsed != null) Response.success(parsed) else Response.error(500, errorText.toResponseBody("text/plain".toMediaType()))
+            
+            if (parsed != null) {
+                Response.success(parsed)
+            } else {
+                Response.error(500, errorText.toResponseBody("text/plain".toMediaType()))
+            }
         } catch (e: Exception) {
             Response.error(500, "Exception: ${e.localizedMessage}".toResponseBody("text/plain".toMediaType()))
         }
     }
 
-    // --- AUTO-LOGIN ---
+    // --- 2. AUTO-LOGIN ---
     suspend fun validateSession(): Boolean {
         val access = getAccessToken() ?: return false
         val apiKey = getApiKey() ?: return false
         val localIp = getLocalIp() ?: return false
         val publicIp = getPublicIp() ?: return false
         val macAddress = getMacAddress() ?: return false
+
         return try {
             val response = api.getProfile("Bearer $access", apiKey, localIp, publicIp, macAddress)
             response.isSuccessful && (response.body()?.status == true)
-        } catch (e: Exception) { false }
+        } catch (e: Exception) {
+            false
+        }
     }
 
-    // --- CREDENTIALS ---
+    // --- 3. CREDENTIALS ---
     fun saveTokens(loginData: LoginResponse?) {
         loginData?.data?.jwtToken?.let { prefs.saveString(KEY_ACCESS, it) }
         loginData?.data?.refreshToken?.let { prefs.saveString(KEY_REFRESH, it) }
         loginData?.data?.feedToken?.let { prefs.saveString(KEY_FEED, it) }
     }
-    fun saveCredentials(cc: String, pass: String, key: String, loc: String, pub: String, mac: String) {
-        prefs.saveString(KEY_CLIENT, cc); prefs.saveString(KEY_PASSWORD, pass); prefs.saveString(KEY_APIKEY, key)
-        prefs.saveString(KEY_LOCAL_IP, loc); prefs.saveString(KEY_PUBLIC_IP, pub); prefs.saveString(KEY_MAC_ADDRESS, mac)
+
+    // Fixed variable names here too
+    fun saveCredentials(
+        clientCode: String, 
+        password: String, 
+        apiKey: String, 
+        localIp: String, 
+        publicIp: String, 
+        macAddress: String
+    ) {
+        prefs.saveString(KEY_CLIENT, clientCode)
+        prefs.saveString(KEY_PASSWORD, password)
+        prefs.saveString(KEY_APIKEY, apiKey)
+        prefs.saveString(KEY_LOCAL_IP, localIp)
+        prefs.saveString(KEY_PUBLIC_IP, publicIp)
+        prefs.saveString(KEY_MAC_ADDRESS, macAddress)
     }
+
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS)
     fun getFeedToken(): String? = prefs.getString(KEY_FEED)
     fun getClientCode(): String? = prefs.getString(KEY_CLIENT)
@@ -84,7 +131,7 @@ class NiftyRepository @Inject constructor(
     fun getPublicIp(): String? = prefs.getString(KEY_PUBLIC_IP)
     fun getMacAddress(): String? = prefs.getString(KEY_MAC_ADDRESS)
 
-    // --- FETCH HOLDINGS ---
+    // --- 4. FETCH HOLDINGS ---
     suspend fun getHoldings(): ApiResult<List<Holding>> {
         val access = getAccessToken() ?: return ApiResult.Error("No token")
         val apiKey = getApiKey() ?: return ApiResult.Error("No key")
@@ -104,7 +151,7 @@ class NiftyRepository @Inject constructor(
         }
     }
 
-    // --- FETCH QUOTES ---
+    // --- 5. FETCH LIVE QUOTES ---
     suspend fun getQuotesForList(tokens: List<String>): ApiResult<List<InstrumentQuote>> {
         val access = getAccessToken() ?: return ApiResult.Error("No token")
         val apiKey = getApiKey() ?: return ApiResult.Error("No key")
@@ -125,7 +172,7 @@ class NiftyRepository @Inject constructor(
         }
     }
 
-    // --- GET FUNDS ---
+    // --- 6. GET FUNDS ---
     suspend fun getFunds(): ApiResult<String> {
         val access = getAccessToken() ?: return ApiResult.Error("No token")
         val apiKey = getApiKey() ?: return ApiResult.Error("No key")
@@ -144,7 +191,7 @@ class NiftyRepository @Inject constructor(
         }
     }
 
-    // --- PLACE ORDER ---
+    // --- 7. PLACE ORDER ---
     suspend fun placeOrder(request: OrderRequest): ApiResult<String> {
         val access = getAccessToken() ?: return ApiResult.Error("No token")
         val apiKey = getApiKey() ?: return ApiResult.Error("No key")
