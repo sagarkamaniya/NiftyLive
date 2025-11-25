@@ -2,12 +2,12 @@ package com.example.niftylive.data.api
 
 import com.example.niftylive.data.model.HoldingResponse
 import com.example.niftylive.data.model.LoginResponse
+import com.example.niftylive.data.model.OrderRequest
+import com.example.niftylive.data.model.OrderResponse
 import com.example.niftylive.data.model.ProfileResponse
 import com.example.niftylive.data.model.QuoteRequest
 import com.example.niftylive.data.model.QuoteResponse
-import com.example.niftylive.data.model.RMSResponse // ✅ FIXED: Added 'import'
-import com.example.niftylive.data.model.OrderRequest
-import com.example.niftylive.data.model.OrderResponse
+import com.example.niftylive.data.model.RMSResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -17,7 +17,6 @@ import retrofit2.http.POST
 
 interface SmartApiService {
 
-    // --- Login ---
     @Headers(
         "Content-Type: application/json",
         "Accept: application/json",
@@ -33,8 +32,6 @@ interface SmartApiService {
         @Body body: Map<String, String>
     ): Response<LoginResponse>
 
-    
-    // --- Get Quote ---
     @Headers(
         "Accept: application/json",
         "X-UserType: USER",
@@ -51,8 +48,6 @@ interface SmartApiService {
         @Body body: QuoteRequest
     ): Response<QuoteResponse>
 
-
-    // --- Get Profile (Auto-Login) ---
     @Headers(
         "Accept: application/json",
         "X-UserType: USER",
@@ -67,8 +62,6 @@ interface SmartApiService {
         @Header("X-MACAddress") macAddress: String
     ): Response<ProfileResponse>
 
-
-    // --- Get Portfolio Holdings ---
     @Headers(
         "Accept: application/json",
         "X-UserType: USER",
@@ -83,7 +76,6 @@ interface SmartApiService {
         @Header("X-MACAddress") macAddress: String
     ): Response<HoldingResponse>
 
-    // ✅ NEW: Get Funds (RMS)
     @Headers(
         "Accept: application/json",
         "X-UserType: USER",
@@ -98,7 +90,6 @@ interface SmartApiService {
         @Header("X-MACAddress") macAddress: String
     ): Response<RMSResponse>
 
-    // ✅ NEW: Place Order
     @Headers(
         "Content-Type: application/json",
         "Accept: application/json",

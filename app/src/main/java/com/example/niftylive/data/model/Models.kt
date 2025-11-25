@@ -3,7 +3,7 @@ package com.example.niftylive.data.model
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-// --- LOGIN MODELS ---
+// --- LOGIN & QUOTE ---
 @JsonClass(generateAdapter = true)
 data class LoginResponse(
     @Json(name = "status") val status: Boolean? = null,
@@ -19,7 +19,6 @@ data class LoginData(
     @Json(name = "feedToken") val feedToken: String? = null
 )
 
-// --- QUOTE MODELS ---
 @JsonClass(generateAdapter = true)
 data class QuoteResponse(
     @Json(name = "status") val status: Boolean? = null,
@@ -50,7 +49,6 @@ data class UnfetchedQuote(
     @Json(name = "message") val message: String? = null
 )
 
-// --- QUOTE REQUEST MODELS ---
 @JsonClass(generateAdapter = true)
 data class QuoteRequest(
     @Json(name = "mode") val mode: String,
@@ -62,7 +60,7 @@ data class ExchangeTokens(
     @Json(name = "NSE") val nse: List<String>
 )
 
-// --- PROFILE MODELS ---
+// --- PROFILE ---
 @JsonClass(generateAdapter = true)
 data class ProfileResponse(
     @Json(name = "status") val status: Boolean? = null,
@@ -76,12 +74,12 @@ data class ProfileData(
     @Json(name = "name") val name: String? = null
 )
 
-// ✅ UPDATED PORTFOLIO MODELS (Matches the new nested structure)
+// --- PORTFOLIO ---
 @JsonClass(generateAdapter = true)
 data class HoldingResponse(
     @Json(name = "status") val status: Boolean? = null,
     @Json(name = "message") val message: String? = null,
-    @Json(name = "data") val data: PortfolioData? = null, // Changed from List to Object
+    @Json(name = "data") val data: PortfolioData? = null,
     @Json(name = "errorcode") val errorcode: String? = null
 )
 
@@ -100,7 +98,6 @@ data class TotalHolding(
 
 @JsonClass(generateAdapter = true)
 data class Holding(
-    // ✅ KEYS UPDATED TO LOWERCASE as per your document
     @Json(name = "tradingsymbol") val tradingSymbol: String? = null,
     @Json(name = "symboltoken") val symbolToken: String? = null,
     @Json(name = "exchange") val exchange: String? = null,
@@ -108,12 +105,11 @@ data class Holding(
     @Json(name = "quantity") val quantity: Long? = null,
     @Json(name = "averageprice") val averagePrice: Double? = null,
     @Json(name = "ltp") val ltp: Double? = null,
-    @Json(name = "profitandloss") val pnl: Double? = null, 
+    @Json(name = "profitandloss") val pnl: Double? = null,
     @Json(name = "product") val product: String? = null
 )
-// ... (Existing models) ...
 
-// ✅ NEW: FUNDS (RMS) MODELS
+// --- FUNDS (RMS) ---
 @JsonClass(generateAdapter = true)
 data class RMSResponse(
     @Json(name = "status") val status: Boolean? = null,
@@ -124,20 +120,20 @@ data class RMSResponse(
 
 @JsonClass(generateAdapter = true)
 data class RMSData(
-    @Json(name = "net") val net: String? = null, // Net Available Funds
+    @Json(name = "net") val net: String? = null,
     @Json(name = "availablecash") val availableCash: String? = null
 )
 
-// ✅ NEW: ORDER PLACEMENT MODELS
+// --- ORDERS ---
 @JsonClass(generateAdapter = true)
 data class OrderRequest(
     @Json(name = "variety") val variety: String = "NORMAL",
     @Json(name = "tradingsymbol") val tradingSymbol: String,
     @Json(name = "symboltoken") val symbolToken: String,
-    @Json(name = "transactiontype") val transactionType: String, // "BUY" or "SELL"
-    @Json(name = "exchange") val exchange: String, // "NSE" or "NFO"
-    @Json(name = "ordertype") val orderType: String, // "MARKET" or "LIMIT"
-    @Json(name = "producttype") val productType: String, // "DELIVERY", "CARRYFORWARD", "INTRADAY"
+    @Json(name = "transactiontype") val transactionType: String,
+    @Json(name = "exchange") val exchange: String,
+    @Json(name = "ordertype") val orderType: String,
+    @Json(name = "producttype") val productType: String,
     @Json(name = "duration") val duration: String = "DAY",
     @Json(name = "price") val price: String = "0",
     @Json(name = "quantity") val quantity: String
