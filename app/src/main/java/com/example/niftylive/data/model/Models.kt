@@ -2,13 +2,15 @@ package com.example.niftylive.data.model
 
 import com.google.gson.annotations.SerializedName
 
-// --- REST API Models ---
+// ==========================================
+// 1. SHOONYA REST API MODELS
+// ==========================================
 data class LoginRequest(
     @SerializedName("uid") val userId: String,
     @SerializedName("pwd") val password: String,
     @SerializedName("factor2") val totp: String,
     @SerializedName("vc") val vendorCode: String,
-    @SerializedName("appkey") val appKey: String, // Note: Shoonya requires this to be a SHA256 hash of (userId|api_key)
+    @SerializedName("appkey") val appKey: String,
     @SerializedName("imei") val imei: String = "niftylive_app",
     @SerializedName("source") val source: String = "API"
 )
@@ -19,7 +21,9 @@ data class LoginResponse(
     @SerializedName("emsg") val errorMessage: String?
 )
 
-// --- WebSocket Models ---
+// ==========================================
+// 2. SHOONYA WEBSOCKET MODELS
+// ==========================================
 data class WsInitMessage(
     @SerializedName("t") val task: String = "c",
     @SerializedName("uid") val userId: String,
@@ -30,7 +34,7 @@ data class WsInitMessage(
 
 data class WsSubMessage(
     @SerializedName("t") val task: String = "t",
-    @SerializedName("k") val keys: String // Shoonya format: "NSE|26000#NFO|54321"
+    @SerializedName("k") val keys: String // Format: "NSE|26000#NFO|54321"
 )
 
 data class MarketTick(
@@ -39,4 +43,35 @@ data class MarketTick(
     @SerializedName("tk") val token: String?,
     @SerializedName("lp") val lastPrice: String?,
     @SerializedName("pc") val percentChange: String?
+)
+
+// ==========================================
+// 3. DASHBOARD UI MODELS (Restored)
+// ==========================================
+data class Holding(
+    val tradingSymbol: String? = null,
+    val symbolToken: String? = null,
+    val averagePrice: Double? = null,
+    val quantity: Int? = null,
+    var ltp: Double? = null,
+    var pnl: Double? = null
+)
+
+data class InstrumentQuote(
+    val tradingSymbol: String? = null,
+    val symbolToken: String? = null,
+    val ltp: Double? = null,
+    val netChange: Double? = null,
+    val percentChange: Double? = null
+)
+
+data class OrderRequest(
+    val tradingSymbol: String,
+    val symbolToken: String,
+    val transactionType: String,
+    val exchange: String,
+    val orderType: String,
+    val productType: String,
+    val quantity: String,
+    val price: String
 )
