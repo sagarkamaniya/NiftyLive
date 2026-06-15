@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "com.example.niftylive.app-merged_res-53:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.example.niftylive.app-main-55:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.example.niftylive.app-merged_res-53:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.example.niftylive.app-main-55:/mipmap-anydpi-v26/ic_launcher.xml"
+    }
+]
