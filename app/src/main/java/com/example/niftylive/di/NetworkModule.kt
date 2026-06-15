@@ -1,64 +1,60 @@
 package com.example.niftylive.di
 
 import com.example.niftylive.data.api.SmartApiService
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor // <-- This is re-enabled
+import okhttp3.RequestBody.Companion.toRequestBody
+import okio.Buffer
 import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
-import retrofit2.converter.scalars.ScalarsConverterFactory
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    // ✅ This function is now UN-COMMENTED
     @Provides
     @Singleton
-    fun provideLoggingInterceptor(): HttpLoggingInterceptor {
-        return HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY // Use BODY to see everything
+    fun provideShoonyaInterceptor(): Interceptor {
+        return Interceptor { chain ->
+            val request = chain.request()
+            val body = request.body
+            val builder = request.newBuilder().header("Content-Type", "application/json")
+            
+            // Core logic: Shoonya requires raw JSON prepended with "jData="
+            if (body != null && request.method == "POST") {
+                val buffer = Buffer()
+                body.writeTo(buffer)
+                val json = buffer.readUtf8()
+                builder.post("jData=$json".toRequestBody(body.contentType()))
+            }
+            chain.proceed(builder.build())
         }
     }
 
     @Provides
     @Singleton
-    // ✅ 'loggingInterceptor' is added back as a parameter
-    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
+    fun provideOkHttpClient(interceptor: Interceptor): OkHttpClient {
         return OkHttpClient.Builder()
-            // ✅ This line is UN-COMMENTED
-            .addInterceptor(loggingInterceptor)
+            .addInterceptor(interceptor)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
             .build()
     }
 
     @Provides
     @Singleton
-    fun provideMoshi(): Moshi {
-        return Moshi.Builder()
-            .add(KotlinJsonAdapterFactory())
-            .build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideRetrofit(client: OkHttpClient, moshi: Moshi): Retrofit {
+    fun provideSmartApiService(client: OkHttpClient): SmartApiService {
         return Retrofit.Builder()
-            .baseUrl("https://apiconnect.angelone.in/")
+            .baseUrl("https://api.shoonya.com/NorenWClientTP/")
             .client(client)
-            .addConverterFactory(ScalarsConverterFactory.create())
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .addConverterFactory(GsonConverterFactory.create())
             .build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideSmartApiService(retrofit: Retrofit): SmartApiService {
-        return retrofit.create(SmartApiService::class.java)
+            .create(SmartApiService::class.java)
     }
 }

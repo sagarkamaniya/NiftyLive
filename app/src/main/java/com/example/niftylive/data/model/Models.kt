@@ -1,150 +1,42 @@
 package com.example.niftylive.data.model
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import com.google.gson.annotations.SerializedName
 
-// --- LOGIN MODELS ---
-@JsonClass(generateAdapter = true)
+// --- REST API Models ---
+data class LoginRequest(
+    @SerializedName("uid") val userId: String,
+    @SerializedName("pwd") val password: String,
+    @SerializedName("factor2") val totp: String,
+    @SerializedName("vc") val vendorCode: String,
+    @SerializedName("appkey") val appKey: String, // Note: Shoonya requires this to be a SHA256 hash of (userId|api_key)
+    @SerializedName("imei") val imei: String = "niftylive_app",
+    @SerializedName("source") val source: String = "API"
+)
+
 data class LoginResponse(
-    @Json(name = "status") val status: Boolean? = null,
-    @Json(name = "data") val data: LoginData? = null,
-    @Json(name = "message") val message: String? = null,
-    @Json(name = "errorcode") val errorcode: String? = null
+    @SerializedName("stat") val status: String, // "Ok" or "Not_Ok"
+    @SerializedName("susertoken") val sessionToken: String?,
+    @SerializedName("emsg") val errorMessage: String?
 )
 
-@JsonClass(generateAdapter = true)
-data class LoginData(
-    @Json(name = "jwtToken") val jwtToken: String? = null,
-    @Json(name = "refreshToken") val refreshToken: String? = null,
-    @Json(name = "feedToken") val feedToken: String? = null
+// --- WebSocket Models ---
+data class WsInitMessage(
+    @SerializedName("t") val task: String = "c",
+    @SerializedName("uid") val userId: String,
+    @SerializedName("actid") val accountId: String,
+    @SerializedName("susertoken") val token: String,
+    @SerializedName("source") val source: String = "API"
 )
 
-// --- QUOTE MODELS ---
-@JsonClass(generateAdapter = true)
-data class QuoteResponse(
-    @Json(name = "status") val status: Boolean? = null,
-    @Json(name = "message") val message: String? = null,
-    @Json(name = "errorcode") val errorcode: String? = null,
-    @Json(name = "data") val data: MarketData? = null
+data class WsSubMessage(
+    @SerializedName("t") val task: String = "t",
+    @SerializedName("k") val keys: String // Shoonya format: "NSE|26000#NFO|54321"
 )
 
-@JsonClass(generateAdapter = true)
-data class MarketData(
-    @Json(name = "fetched") val fetched: List<InstrumentQuote>,
-    @Json(name = "unfetched") val unfetched: List<UnfetchedQuote>? = null
-)
-
-@JsonClass(generateAdapter = true)
-data class InstrumentQuote(
-    @Json(name = "exchange") val exchange: String? = null,
-    @Json(name = "tradingSymbol") val tradingSymbol: String? = null,
-    @Json(name = "symbolToken") val symbolToken: String? = null,
-    @Json(name = "ltp") val ltp: Double? = null,
-    @Json(name = "netChange") val netChange: Double? = null,
-    @Json(name = "percentChange") val percentChange: Double? = null
-)
-
-@JsonClass(generateAdapter = true)
-data class UnfetchedQuote(
-    @Json(name = "symbolToken") val symbolToken: String? = null,
-    @Json(name = "message") val message: String? = null
-)
-
-// --- QUOTE REQUEST MODELS ---
-@JsonClass(generateAdapter = true)
-data class QuoteRequest(
-    @Json(name = "mode") val mode: String,
-    @Json(name = "exchangeTokens") val exchangeTokens: ExchangeTokens
-)
-
-@JsonClass(generateAdapter = true)
-data class ExchangeTokens(
-    @Json(name = "NSE") val nse: List<String>
-)
-
-// --- PROFILE MODELS ---
-@JsonClass(generateAdapter = true)
-data class ProfileResponse(
-    @Json(name = "status") val status: Boolean? = null,
-    @Json(name = "message") val message: String? = null,
-    @Json(name = "data") val data: ProfileData? = null
-)
-
-@JsonClass(generateAdapter = true)
-data class ProfileData(
-    @Json(name = "clientcode") val clientCode: String? = null,
-    @Json(name = "name") val name: String? = null
-)
-
-// --- PORTFOLIO MODELS ---
-@JsonClass(generateAdapter = true)
-data class HoldingResponse(
-    @Json(name = "status") val status: Boolean? = null,
-    @Json(name = "message") val message: String? = null,
-    @Json(name = "data") val data: PortfolioData? = null,
-    @Json(name = "errorcode") val errorcode: String? = null
-)
-
-@JsonClass(generateAdapter = true)
-data class PortfolioData(
-    @Json(name = "holdings") val holdings: List<Holding>? = null,
-    @Json(name = "totalholding") val totalHolding: TotalHolding? = null
-)
-
-@JsonClass(generateAdapter = true)
-data class TotalHolding(
-    @Json(name = "totalholdingvalue") val totalValue: Double? = null,
-    @Json(name = "totalprofitandloss") val totalPnl: Double? = null,
-    @Json(name = "totalpnlpercentage") val totalPnlPercentage: Double? = null
-)
-
-@JsonClass(generateAdapter = true)
-data class Holding(
-    @Json(name = "tradingsymbol") val tradingSymbol: String? = null,
-    @Json(name = "symboltoken") val symbolToken: String? = null,
-    @Json(name = "exchange") val exchange: String? = null,
-    @Json(name = "isin") val isin: String? = null,
-    @Json(name = "quantity") val quantity: Long? = null,
-    @Json(name = "averageprice") val averagePrice: Double? = null,
-    @Json(name = "ltp") val ltp: Double? = null,
-    @Json(name = "profitandloss") val pnl: Double? = null, 
-    @Json(name = "product") val product: String? = null
-)
-
-// --- FUNDS (RMS) MODELS ---
-@JsonClass(generateAdapter = true)
-data class RMSResponse(
-    @Json(name = "status") val status: Boolean? = null,
-    @Json(name = "message") val message: String? = null,
-    @Json(name = "errorcode") val errorcode: String? = null,
-    @Json(name = "data") val data: RMSData? = null
-)
-
-@JsonClass(generateAdapter = true)
-data class RMSData(
-    @Json(name = "net") val net: String? = null, // Net Available Funds
-    @Json(name = "availablecash") val availableCash: String? = null
-)
-
-// --- ORDERS ---
-@JsonClass(generateAdapter = true)
-data class OrderRequest(
-    @Json(name = "variety") val variety: String = "NORMAL",
-    @Json(name = "tradingsymbol") val tradingSymbol: String,
-    @Json(name = "symboltoken") val symbolToken: String,
-    @Json(name = "transactiontype") val transactionType: String,
-    @Json(name = "exchange") val exchange: String,
-    @Json(name = "ordertype") val orderType: String,
-    @Json(name = "producttype") val productType: String,
-    @Json(name = "duration") val duration: String = "DAY",
-    @Json(name = "price") val price: String = "0",
-    @Json(name = "quantity") val quantity: String
-)
-
-// ✅ UPDATED: 'data' is now a String (Order ID), not an Object
-@JsonClass(generateAdapter = true)
-data class OrderResponse(
-    @Json(name = "status") val status: Boolean? = null,
-    @Json(name = "message") val message: String? = null,
-    @Json(name = "data") val data: String? = null // <--- CHANGED TO STRING
+data class MarketTick(
+    @SerializedName("t") val type: String?, // 'tk' or 'tf'
+    @SerializedName("e") val exchange: String?,
+    @SerializedName("tk") val token: String?,
+    @SerializedName("lp") val lastPrice: String?,
+    @SerializedName("pc") val percentChange: String?
 )
